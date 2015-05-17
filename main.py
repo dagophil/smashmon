@@ -1,5 +1,6 @@
 import sys
 import argparse
+import logging
 import core.gameapp as app
 
 
@@ -14,11 +15,18 @@ def parse_command_line():
                         help="Screen height")
     parser.add_argument("--fps", type=int, default=60,
                         help="Frames per second")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Print verbose output")
     args = parser.parse_args()
 
     assert args.width > 0
     assert args.height > 0
     assert args.fps > 0
+
+    if args.verbose:
+        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG)
+    else:
+        logging.basicConfig(format="%(levelname)s: %(message)s")
 
     return args
 

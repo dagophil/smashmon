@@ -28,8 +28,8 @@ def gameloop(args):
     screen = pygame.display.set_mode((args.width, args.height))
     clock = pygame.time.Clock()
 
-    level = get_level("MainMenu")
     try:
+        level = get_level("MainMenu")
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
