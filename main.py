@@ -35,7 +35,7 @@ def main():
     """Calls the game loop.
     """
     args = parse_command_line()
-    app.gameloop(args)
+    app.run(args)
 
 
 if __name__ == "__main__":
