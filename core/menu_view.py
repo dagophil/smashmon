@@ -22,18 +22,24 @@ class MenuPygameView(object):
 
     def show_buttons(self):
         for b in self._buttons:
-            w = self._to_screen_x(b.width)
-            h = self._to_screen_y(b.height)
+            w = self.to_screen_x(b.width)
+            h = self.to_screen_y(b.height)
             im = resource_manager.ResourceManager.instance().get_image(b.get_image(), size=(w, h))
-            x = self._to_screen_x(b.x)
-            y = self._to_screen_y(b.y)
+            x = self.to_screen_x(b.x)
+            y = self.to_screen_y(b.y)
             self._screen.blit(im, (x, y))
 
-    def _to_screen_x(self, x):
+    def to_screen_x(self, x):
         return int(x * self._screen.get_width() / 10.0)
 
-    def _to_screen_y(self, y):
+    def to_screen_y(self, y):
         return int(y * self._screen.get_height() / 10.0)
+
+    def to_game_x(self, x):
+        return x * 10.0 / self._screen.get_width()
+
+    def to_game_y(self, y):
+        return y * 10.0 / self._screen.get_height()
 
     def notify(self, event):
         if isinstance(event, events.MenuCreatedEvent):
@@ -46,3 +52,6 @@ class MenuPygameView(object):
 
             pygame.display.flip()
         # elif isinstance(event, events.TickEvent):
+
+    def screen_size(self):
+        return self._screen.get_size()

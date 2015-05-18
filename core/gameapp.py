@@ -54,9 +54,9 @@ def run(args):
     ev_manager = events.EventManager()
 
     ticker = TickerController(ev_manager)
-    menu_controller = io.MenuIOController(ev_manager)
-    main_menu = menu.MainMenuModel(ev_manager)
     menu_pygame_view = menu_view.MenuPygameView(ev_manager)
+    menu_controller = io.MenuIOController(ev_manager, menu_pygame_view)
+    main_menu = menu.MainMenuModel(ev_manager)
 
     init_ev = events.InitEvent()
     ev_manager.post(init_ev)
