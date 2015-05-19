@@ -22,11 +22,7 @@ class MenuPygameView(object):
 
     def show_buttons(self):
         for b in self._buttons:
-            w = self.to_screen_x(b.width)
-            h = self.to_screen_y(b.height)
-            im = resource_manager.ResourceManager.instance().get_image(b.get_image(), size=(w, h))
-            x = self.to_screen_x(b.x)
-            y = self.to_screen_y(b.y)
+            im, (x, y) = self._get_button_image(b)
             self._screen.blit(im, (x, y))
 
     def to_screen_x(self, x):
@@ -35,11 +31,23 @@ class MenuPygameView(object):
     def to_screen_y(self, y):
         return int(y * self._screen.get_height() / 10.0)
 
+    def to_screen_xy(self, x, y):
+        return self.to_screen_x(x), self.to_screen_y(y)
+
     def to_game_x(self, x):
         return x * 10.0 / self._screen.get_width()
 
     def to_game_y(self, y):
         return y * 10.0 / self._screen.get_height()
+
+    def to_game_xy(self, x, y):
+        return self.to_game_x(x), self.to_game_y(y)
+
+    def _get_button_image(self, button):
+        w, h = self.to_screen_xy(button.width, button.height)
+        im = resource_manager.ResourceManager.instance().get_image(button.get_image(), size=(w, h))
+        x, y = self.to_screen_xy(button.x, button.y)
+        return im, (x, y)
 
     def notify(self, event):
         if isinstance(event, events.MenuCreatedEvent):
@@ -49,9 +57,20 @@ class MenuPygameView(object):
 
             self.show_bg()
             self.show_buttons()
-
+        elif isinstance(event, events.TickEvent):
             pygame.display.flip()
-        # elif isinstance(event, events.TickEvent):
+        elif isinstance(event, events.ButtonHoverEvent):
+            b = event.button
+            im, (x, y) = self._get_button_image(b)
+            self._screen.blit(im, (x, y))
+        elif isinstance(event, events.ButtonUnhoverEvent):
+            b = event.button
+            im, (x, y) = self._get_button_image(b)
+            self._screen.blit(im, (x, y))
+        elif isinstance(event, events.ButtonPressEvent):
+            b = event.button
+            im, (x, y) = self._get_button_image(b)
+            self._screen.blit(im, (x, y))
 
     def screen_size(self):
         return self._screen.get_size()

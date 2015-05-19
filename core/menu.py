@@ -39,15 +39,37 @@ class Button(object):
             self.img_pressed = img_pressed
         self._action = action
 
+    def is_up(self):
+        return self.state == self.__UP
+
+    def is_hovered(self):
+        return self.state == self.__HOVERED
+
+    def is_pressed(self):
+        return self.state == self.__PRESSED
+
+    def set_up(self):
+        self.state = self.__UP
+
+    def set_hovered(self):
+        self.state = self.__HOVERED
+
+    def set_pressed(self):
+        self.state = self.__PRESSED
+
     def get_image(self):
-        if self.state == self.__UP:
+        if self.is_up():
             return self.img
-        elif self.state == self.__HOVERED:
+        elif self.is_hovered():
             return self.img_hovered
-        elif self.state == self.__PRESSED:
+        elif self.is_pressed():
             return self.img_pressed
         else:
             raise Exception("Unknown button state: %d" % self.state)
+
+    def action(self):
+        if self._action is not None:
+            self._action()
 
 
 class MenuModel(object):
@@ -61,9 +83,9 @@ class MenuModel(object):
         self._ev_manager.register_listener(self)
         self.bg_img = bg_img
         if buttons is None:
-            self._buttons = []
+            self.buttons = []
         else:
-            self._buttons = buttons
+            self.buttons = buttons
 
     def notify(self, event):
         raise NotImplementedError
@@ -85,8 +107,26 @@ class MainMenuModel(MenuModel):
         super(MainMenuModel, self).__init__(ev_manager, menu_bg, buttons=buttons)
 
     def notify(self, event):
-        # TODO: Capture ChangeButtonState events.
-
         if isinstance(event, events.InitEvent):
-            ev = events.MenuCreatedEvent(self.bg_img, self._buttons)
+            ev = events.MenuCreatedEvent(self.bg_img, self.buttons)
             self._ev_manager.post(ev)
+        elif isinstance(event, events.ButtonHoverRequestedEvent):
+            b = event.button
+            if b.is_up():
+                b.set_hovered()
+                self._ev_manager.post(events.ButtonHoverEvent(b))
+        elif isinstance(event, events.ButtonUnhoverRequestedEvent):
+            b = event.button
+            if not b.is_up():
+                b.set_up()
+                self._ev_manager.post(events.ButtonUnhoverEvent(b))
+        elif isinstance(event, events.ButtonPressRequestedEvent):
+            b = event.button
+            b.set_pressed()
+            self._ev_manager.post(events.ButtonPressEvent(b))
+        elif isinstance(event, events.ButtonActionRequestedEvent):
+            b = event.button
+            b.action()
+            self._ev_manager.post(events.ButtonActionEvent(b))
+            b.set_hovered()
+            self._ev_manager.post(events.ButtonHoverEvent(b))
