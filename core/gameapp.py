@@ -36,8 +36,8 @@ def run(args):
     ev_manager = events.EventManager()
 
     # Create MVC.
-    ticker = TickerController(ev_manager)
-    menu_pygame_view = menu_view.MenuPygameView(ev_manager)
+    ticker = TickerController(ev_manager, args.fps)
+    menu_pygame_view = menu_view.MenuPygameView(ev_manager, (args.width, args.height))
     main_menu = menu.MainMenuModel(ev_manager)
     menu_controller = io.MenuIOController(ev_manager, main_menu, menu_pygame_view)
 
