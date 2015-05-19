@@ -19,8 +19,7 @@ class TickerController(object):
 
     def run(self):
         while self._running:
-            ev = events.TickEvent()
-            self._ev_manager.post(ev)
+            self._ev_manager.post(events.TickEvent())
             self._clock.tick(self._fps)
 
     def notify(self, event):
@@ -33,15 +32,20 @@ def run(args):
 
     :param args: Command line arguments.
     """
+    # Create event manager.
     ev_manager = events.EventManager()
 
+    # Create MVC.
     ticker = TickerController(ev_manager)
     menu_pygame_view = menu_view.MenuPygameView(ev_manager)
     main_menu = menu.MainMenuModel(ev_manager)
     menu_controller = io.MenuIOController(ev_manager, main_menu, menu_pygame_view)
 
+    # The MVC is set up, so all components can be initialized.
     ev_manager.post(events.InitEvent())
 
+    # Start the heart beat.
     ticker.run()
 
+    # Quit when the heart stops beating.
     pygame.quit()
