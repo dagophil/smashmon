@@ -18,14 +18,6 @@ class TickEvent(Event):
         super(TickEvent, self).__init__(name="Tick")
 
 
-class QuitEvent(Event):
-    """The quit event is sent when the whole app shall shut down.
-    """
-
-    def __init__(self):
-        super(QuitEvent, self).__init__(name="Quit")
-
-
 class InitEvent(Event):
     """The init event is sent after all models, views and controllers have been registered at the event manager.
     """
@@ -116,6 +108,15 @@ class ButtonActionEvent(Event):
         self.button = button
 
 
+class CloseCurrentModel(Event):
+    """This event is called, when the current model is closing.
+    """
+
+    def __init__(self, next_model_name):
+        super(CloseCurrentModel, self).__init__(name="Close current model")
+        self.next_model_name = next_model_name
+
+
 class EventManager(object):
     """
     Receives events and posts them to all _listeners.
@@ -124,6 +125,7 @@ class EventManager(object):
 
     def __init__(self):
         self._listeners = weakref.WeakKeyDictionary()
+        self.next_model_name = None
 
     def register_listener(self, listener):
         self._listeners[listener] = 1
@@ -135,5 +137,11 @@ class EventManager(object):
     def post(self, event):
         if not isinstance(event, TickEvent):
             logging.debug("Event: %s" % event.name)
-        for listener in self._listeners:
-            listener.notify(event)
+        if isinstance(event, CloseCurrentModel):
+            self.next_model_name = event.next_model_name
+
+        # Iterate over a copy of the dict, so even from within the loop listeners
+        # can delete themselves from the dict.
+        listeners = list(self._listeners)
+        for l in listeners:
+            l.notify(event)

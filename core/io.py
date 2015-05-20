@@ -20,10 +20,10 @@ class MenuIOController(object):
         if isinstance(event, events.TickEvent):
             for pygame_event in pygame.event.get():
                 if pygame_event.type == pygame.QUIT:
-                    self._ev_manager.post(events.QuitEvent())
+                    self._ev_manager.post(events.CloseCurrentModel(next_model_name=None))
                 elif pygame_event.type == pygame.KEYDOWN:
                     if pygame_event.key == pygame.K_ESCAPE:
-                        self._ev_manager.post(events.QuitEvent())
+                        self._ev_manager.post(events.CloseCurrentModel(next_model_name=None))
                 elif pygame_event.type == pygame.MOUSEMOTION:
                     sx, sy = pygame_event.pos
                     x, y = self._view.to_game_xy(sx, sy)

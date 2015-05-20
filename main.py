@@ -1,7 +1,7 @@
 import sys
 import argparse
 import logging
-import core.gameapp as app
+from core.gameapp import GameApp
 
 
 def parse_command_line():
@@ -35,7 +35,8 @@ def main():
     """Calls the game loop.
     """
     args = parse_command_line()
-    app.run(args)
+    app = GameApp(args)
+    app.run()
 
 
 if __name__ == "__main__":

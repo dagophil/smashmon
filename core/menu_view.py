@@ -9,13 +9,12 @@ class MenuPygameView(object):
     Show a menu model using a Pygame window.
     """
 
-    def __init__(self, ev_manager, initial_screen_size=(600, 400)):
+    def __init__(self, ev_manager):
         self._ev_manager = ev_manager
         self._ev_manager.register_listener(self)
-        self._screen = None
+        self._screen = pygame.display.get_surface()
         self._bg_img = None
         self._buttons = None
-        self._initial_screen_size = initial_screen_size
 
     def show_bg(self):
         im = resource_manager.ResourceManager.instance().get_image(self._bg_img, size=self._screen.get_size())
@@ -54,8 +53,6 @@ class MenuPygameView(object):
         if isinstance(event, events.MenuCreatedEvent):
             self._bg_img = event.bg_img
             self._buttons = event.buttons
-            self._screen = pygame.display.set_mode(self._initial_screen_size)
-
             self.show_bg()
             self.show_buttons()
         elif isinstance(event, events.TickEvent):

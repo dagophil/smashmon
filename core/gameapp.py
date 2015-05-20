@@ -3,6 +3,7 @@ import events
 import io
 import menu
 import menu_view
+import logging
 
 
 class TickerController(object):
@@ -23,29 +24,65 @@ class TickerController(object):
             self._clock.tick(self._fps)
 
     def notify(self, event):
-        if isinstance(event, events.QuitEvent):
+        if isinstance(event, events.CloseCurrentModel):
             self._running = False
 
 
-def run(args):
-    """Runs the game loop.
-
-    :param args: Command line arguments.
+class GameApp(object):
     """
-    # Create event manager.
-    ev_manager = events.EventManager()
+    This class starts, stops and exchanges the models and the corresponding view and controllers.
+    """
 
-    # Create MVC.
-    ticker = TickerController(ev_manager, args.fps)
-    menu_pygame_view = menu_view.MenuPygameView(ev_manager, (args.width, args.height))
-    main_menu = menu.MainMenuModel(ev_manager)
-    menu_controller = io.MenuIOController(ev_manager, main_menu, menu_pygame_view)
+    def __init__(self, args):
+        """Init the app with the command line arguments.
 
-    # The MVC is set up, so all components can be initialized.
-    ev_manager.post(events.InitEvent())
+        :param args: command line arguments
+        """
+        self._args = args
+        self._ev_manager = events.EventManager()
+        # self._ev_manager.register_listener(self)
+        self._quit_app_requested = False
+        self._models = {
+            "Main Menu": self.main_menu_model
+        }
+        self._next_model_name = "Main Menu"
 
-    # Start the heart beat.
-    ticker.run()
+    def main_menu_model(self):
+        # Create MVC.
+        ticker = TickerController(self._ev_manager, self._args.fps)
+        menu_pygame_view = menu_view.MenuPygameView(self._ev_manager)
+        main_menu = menu.MainMenuModel(self._ev_manager)
+        menu_controller = io.MenuIOController(self._ev_manager, main_menu, menu_pygame_view)
 
-    # Quit when the heart stops beating.
-    pygame.quit()
+        # The MVC is set up, so all components can be initialized.
+        self._ev_manager.post(events.InitEvent())
+
+        # Start the heart beat.
+        ticker.run()
+
+        # Get the next model.
+        self._next_model_name = self._ev_manager.next_model_name
+
+    def run(self):
+        """Runs the game loop.
+        """
+        # Show the window.
+        pygame.display.set_mode((self._args.width, self._args.height))
+
+        while self._next_model_name is not None:
+            # Initialize and run the next model.
+            if self._next_model_name in self._models:
+                self._models[self._next_model_name]()
+            else:
+                raise Exception("Unknown model name: %s" % self._next_model_name)
+
+            if self._quit_app_requested:
+                break
+            elif self._next_model_name is None:
+                logging.warning("GameApp: The current model finished and did not set a new model, "
+                                "but there was no quit event.")
+            else:
+                logging.warning("TODO: Clean the listeners before loading the next model.")
+
+        # Quit when all models finished.
+        pygame.quit()

@@ -1,5 +1,6 @@
 import pygame
 import events
+import logging
 
 
 class Button(object):
@@ -101,10 +102,16 @@ class MainMenuModel(MenuModel):
         btn_normal = "resources/btn_normal.png"
         btn_hover = "resources/btn_hover.png"
         btn_pressed = "resources/btn_pressed.png"
-        btn = Button((4, 4), (2, 1), btn_normal, img_hovered=btn_hover, img_pressed=btn_pressed)
+        btn = Button((4, 4), (2, 1),
+                     btn_normal, img_hovered=btn_hover, img_pressed=btn_pressed,
+                     action=self.load_level)
 
         buttons = [btn]
         super(MainMenuModel, self).__init__(ev_manager, menu_bg, buttons=buttons)
+
+    def load_level(self):
+        # TODO: Change this to some real model.
+        self._ev_manager.post(events.CloseCurrentModel(next_model_name="Level 1"))
 
     def notify(self, event):
         if isinstance(event, events.InitEvent):
