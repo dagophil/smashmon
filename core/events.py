@@ -1,5 +1,7 @@
 import weakref
 import logging
+import collections
+import IPython
 
 
 class Event(object):
@@ -126,6 +128,7 @@ class EventManager(object):
     def __init__(self):
         self._listeners = weakref.WeakKeyDictionary()
         self.next_model_name = None
+        self._queue = collections.deque()
 
     def register_listener(self, listener):
         self._listeners[listener] = 1
@@ -135,13 +138,17 @@ class EventManager(object):
             del self._listeners[listener]
 
     def post(self, event):
-        if not isinstance(event, TickEvent):
-            logging.debug("Event: %s" % event.name)
+        self._queue.append(event)
         if isinstance(event, CloseCurrentModel):
             self.next_model_name = event.next_model_name
+        if isinstance(event, TickEvent):
+            while len(self._queue) > 0:
+                ev = self._queue.popleft()
+                if not isinstance(ev, TickEvent):
+                    logging.debug("Event: %s" % ev.name)
 
-        # Iterate over a copy of the dict, so even from within the loop listeners
-        # can delete themselves from the dict.
-        listeners = list(self._listeners)
-        for l in listeners:
-            l.notify(event)
+                # Iterate over a copy of the dict, so even from within the loop listeners
+                # can delete themselves from the dict.
+                listeners = list(self._listeners)
+                for l in listeners:
+                    l.notify(ev)
