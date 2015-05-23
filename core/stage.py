@@ -15,98 +15,77 @@ class StageModel(object):
         assert isinstance(ev_manager, events.EventManager)
         self._ev_manager = ev_manager
         self._id = self._ev_manager.register_listener(self)
-        self._world = Box2D.b2World(gravity=(0, -10), doSleep=True)
-        self._static_bodies = {}
-        self._dynamic_bodies = {}
-        self._fixtures = {}
-        self._next_static_body_id = 0
-        self._next_dynamic_body_id = 0
-        self._next_fixture_id = 0
-        self._character_ids = {}  # {controller_id: character_id}
-        self._next_character_id = 0
+        self.world = Box2D.b2World(gravity=(0, -10), doSleep=True)
+        self._world_objects = {}
+        self._throwable_objects = {}
+        self._characters = {}
+        self._next_id = 0
+        self.colors = {}
 
-        # TODO: Load the game objects from a file instead of creating them here.
-        # TODO: Add background image.
+        ground_body = self.world.CreateStaticBody(position=(5, 1.5))
+        ground_body_fixture = ground_body.CreatePolygonFixture(box=(4, 0.5))
+        ground_id = self._add_world_object(ground_body)
+        self.colors[ground_id] = (255, 255, 255, 255)
 
-        ground_body = self._create_static_body(
-            position=(5, 1.5),  # center point
-        )
-
-        ground_body_fixture = self._create_polygon_fixture(
-            ground_body,
-            box=(4, 0.5)
-        )
-
-        dynamic_body = self._create_dynamic_body(
-            position=(3, 7)  # center point
-        )
-
-        dynamic_body_fixture = self._create_polygon_fixture(
-            dynamic_body,
-            box=(0.5, 0.6),  # half of width, half of height
+        dynamic_body = self.world.CreateDynamicBody(position=(3, 7))
+        dynamic_body_fixture = dynamic_body.CreatePolygonFixture(
+            box=(0.5, 0.5),
             density=1,
             friction=0.3
         )
+        char_id = self._add_character(dynamic_body)
+        self.colors[char_id] = (127, 127, 127, 255)
+        # TODO: Load the game objects from a file instead of creating them here.
+        # TODO: Add background image.
+        # TODO: Load all stuff in the init event and not in the constructor.
 
-        # IPython.embed()
+    def _add_world_object(self, obj):
+        obj_id = self._next_id
+        self._next_id += 1
+        obj.userData = obj_id
+        self._world_objects[obj_id] = obj
+        return obj_id
 
-    def _create_static_body(self, *args, **kwargs):
-        body = self._world.CreateStaticBody(*args, **kwargs)
-        body.userData = self._next_static_body_id
-        self._static_bodies[self._next_static_body_id] = body
-        self._next_static_body_id += 1
-        return body
+    def _add_throwable_object(self, obj):
+        obj_id = self._next_id
+        self._next_id += 1
+        obj.userData = obj_id
+        self._throwable_objects[obj_id] = obj
+        return obj_id
 
-    def _create_dynamic_body(self, *args, **kwargs):
-        body = self._world.CreateDynamicBody(*args, **kwargs)
-        body.userData = self._next_dynamic_body_id
-        self._dynamic_bodies[self._next_dynamic_body_id] = body
-        self._next_dynamic_body_id += 1
-        return body
-
-    def _create_polygon_fixture(self, body, *args, **kwargs):
-        fixture = body.CreatePolygonFixture(*args, **kwargs)
-        fixture.userData = self._next_fixture_id
-        self._fixtures[self._next_fixture_id] = fixture
-        self._next_fixture_id += 1
-        return fixture
+    def _add_character(self, obj):
+        obj_id = self._next_id
+        self._next_id += 1
+        obj.userData = obj_id
+        self._characters[obj_id] = obj
+        return obj_id
 
     def notify(self, event):
         if isinstance(event, events.InitEvent):
-            pass
+            for i, k in enumerate(self._characters):
+                self._ev_manager.post(events.AssignCharacterId(i, k))
         elif isinstance(event, events.TickEvent):
             elapsed_time = event.elapsed_time
-            self._world.Step(elapsed_time, 10, 10)
+            self.world.Step(elapsed_time, 10, 10)
             # TODO: Maybe replace the number of iterations (here: 10) by a more meaningful value.
-
-            self._ev_manager.post(events.WorldStep(self._world))
-        elif isinstance(event, events.NeedCharacterId):
-            controller_id = event.controller_id
-            if controller_id in self._character_ids:
-                character_id = self._character_ids[controller_id]
-            else:
-                character_id = self._next_character_id
-                self._next_character_id += 1
-                self._character_ids[controller_id] = character_id
-            self._ev_manager.post(events.AssignCharacterId(controller_id, character_id))
         elif isinstance(event, events.CharacterMoveLeftRequest):
             character_id = event.character_id
-            body = self._dynamic_bodies[0]
+            body = self._characters[character_id]
             body.ApplyLinearImpulse((-0.2, 0), body.worldCenter, True)
             MAX_VELO = 2.7
             if abs(body.linearVelocity[0]) > MAX_VELO:
                 body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
-            # TODO: Move the character to the left.
+            # TODO: Improve the movement.
         elif isinstance(event, events.CharacterMoveRightRequest):
             character_id = event.character_id
-            body = self._dynamic_bodies[0]
+            body = self._characters[character_id]
             body.ApplyLinearImpulse((0.2, 0), body.worldCenter, True)
             MAX_VELO = 2.7
             if abs(body.linearVelocity[0]) > MAX_VELO:
                 body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
-            # TODO: Move the character to the right.
+            # TODO: Improve the movement
         elif isinstance(event, events.CharacterJumpRequest):
             character_id = event.character_id
-            body = self._dynamic_bodies[0]
-            body.ApplyLinearImpulse((0, 10), body.worldCenter, True)
-            # TODO: Let the character jump (but only when he touches the ground).
+            body = self._characters[character_id]
+            body.ApplyLinearImpulse((0, 5), body.worldCenter, True)
+            # TODO: Let the character jump, but only when he touches the ground.

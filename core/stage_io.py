@@ -8,19 +8,21 @@ class StageIOController(object):
     Take Pygame events (mouse, keyboard and quit events) and send requests to control a stage model.
     """
 
-    def __init__(self, ev_manager):
+    def __init__(self, ev_manager, character_index=None):
         assert isinstance(ev_manager, events.EventManager)
         self._ev_manager = ev_manager
         self._id = self._ev_manager.register_listener(self)
+        self._character_index = character_index
         self._character_id = None
 
     def notify(self, event):
         if isinstance(event, events.InitEvent):
-            self._ev_manager.post(events.NeedCharacterId(controller_id=self._id))
+            pass
+            # self._ev_manager.post(events.NeedCharacterId(controller_id=self._id))
         elif isinstance(event, events.AssignCharacterId):
-            if event.controller_id == self._id:
+            if event.character_index == self._character_index:
                 self._character_id = event.character_id
-                logging.debug("Controller %d (%s) got character %d" % (self._id, self.__class__.__name__, self._character_id))
+                logging.debug("Controller %d (%s) got character with id %d" % (self._id, self.__class__.__name__, self._character_id))
         elif isinstance(event, events.TickEvent):
             # Handle key down events.
             for pygame_event in pygame.event.get():

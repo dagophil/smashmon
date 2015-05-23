@@ -132,22 +132,13 @@ class WorldStep(Event):
         self.world = world
 
 
-class NeedCharacterId(Event):
-    """This event is sent, when a controller needs an id for the controlled character.
-    """
-
-    def __init__(self, controller_id):
-        super(NeedCharacterId, self).__init__(name="Need character id")
-        self.controller_id = controller_id
-
-
 class AssignCharacterId(Event):
-    """This event is sent, when someone assigned a character id to a controller.
+    """This event is sent, when a character got an id.
     """
 
-    def __init__(self, controller_id, character_id):
+    def __init__(self, character_index, character_id):
         super(AssignCharacterId, self).__init__(name="Assign character id")
-        self.controller_id = controller_id
+        self.character_index = character_index
         self.character_id = character_id
 
 

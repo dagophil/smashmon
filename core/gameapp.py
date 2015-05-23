@@ -67,14 +67,14 @@ class GameApp(object):
     def _stage_model(self):
         logging.debug("GameApp: Loading stage model")
 
-        # TODO: Create MVC.
         stage_model = stage.StageModel(self._ev_manager)
-        stage_pygame_view = stage_view.StagePygameView(self._ev_manager)
-        stage_controller = stage_io.StageIOController(self._ev_manager)
+        stage_pygame_view = stage_view.StagePygameView(self._ev_manager, stage_model)
+        stage_controller = stage_io.StageIOController(self._ev_manager, character_index=0)
+        # TODO: Somehow get the character index from the menu.
 
         # Init all components and start the ticker.
         self._ev_manager.post(events.InitEvent())
-        self._ticker.run()  # TODO: Uncomment after creating the MVC.
+        self._ticker.run()
 
     def run(self):
         """Runs the game loop.
