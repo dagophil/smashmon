@@ -115,7 +115,7 @@ class ButtonActionEvent(Event):
 
 
 class CloseCurrentModel(Event):
-    """This event is called, when the current model is closing.
+    """This event is sent, when the current model is closing.
     """
 
     def __init__(self, next_model_name):
@@ -124,12 +124,48 @@ class CloseCurrentModel(Event):
 
 
 class WorldStep(Event):
-    """This event is called, when the (Box2D) world made a step.
+    """This event is sent, when the (Box2D) world made a step.
     """
 
     def __init__(self, world):
         super(WorldStep, self).__init__(name="World step")
         self.world = world
+
+
+class NeedCharacterId(Event):
+    """This event is sent, when a controller needs an id for the controlled character.
+    """
+
+    def __init__(self, controller_id):
+        super(NeedCharacterId, self).__init__(name="Need character id")
+        self.controller_id = controller_id
+
+
+class AssignCharacterId(Event):
+    """This event is sent, when someone assigned a character id to a controller.
+    """
+
+    def __init__(self, controller_id, character_id):
+        super(AssignCharacterId, self).__init__(name="Assign character id")
+        self.controller_id = controller_id
+        self.character_id = character_id
+
+
+class CharacterMoveLeftRequest(Event):
+    """This event is sent, when a controller wats to move a character to the left.
+    """
+
+    def __init__(self, character_id):
+        super(CharacterMoveLeftRequest, self).__init__(name="Character move left request")
+        self.character_id = character_id
+
+class CharacterMoveRightRequest(Event):
+    """This event is sent, when a controller wants to move a character to the right.
+    """
+
+    def __init__(self, character_id):
+        super(CharacterMoveRightRequest, self).__init__(name="Character move right request")
+        self.character_id = character_id
 
 
 class EventManager(object):
@@ -142,10 +178,14 @@ class EventManager(object):
         self._listeners = weakref.WeakKeyDictionary()
         self.next_model_name = None
         self._queue = collections.deque()
+        self._next_id = 0
 
     def register_listener(self, listener):
-        self._listeners[listener] = 1
-        logging.debug("Register listener: %s" % listener.__class__.__name__)
+        id = self._next_id
+        self._next_id += 1
+        self._listeners[listener] = id
+        logging.debug("Register listener: %s, id %d" % (listener.__class__.__name__, id))
+        return id
 
     def unregister_listener(self, listener):
         if listener in self._listeners:
@@ -156,7 +196,7 @@ class EventManager(object):
         self._queue.append(event)
         if isinstance(event, CloseCurrentModel):
             self.next_model_name = event.next_model_name
-        if isinstance(event, TickEvent):
+        elif isinstance(event, TickEvent) or isinstance(event, InitEvent):
             while len(self._queue) > 0:
                 ev = self._queue.popleft()
                 if not isinstance(ev, TickEvent) and not isinstance(ev, WorldStep):

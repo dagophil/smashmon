@@ -82,7 +82,7 @@ class MenuModel(object):
     def __init__(self, ev_manager, bg_img, buttons=None):
         assert isinstance(ev_manager, events.EventManager)
         self._ev_manager = ev_manager
-        self._ev_manager.register_listener(self)
+        self._id = self._ev_manager.register_listener(self)
         self.bg_img = bg_img
         if buttons is None:
             self.buttons = []

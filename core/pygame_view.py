@@ -10,7 +10,7 @@ class PygameView(object):
     def __init__(self, ev_manager):
         assert isinstance(ev_manager, events.EventManager)
         self._ev_manager = ev_manager
-        self._ev_manager.register_listener(self)
+        self._id = self._ev_manager.register_listener(self)
         self._screen = pygame.display.get_surface()
 
     def to_screen_x(self, x):
