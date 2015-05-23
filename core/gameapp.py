@@ -6,6 +6,7 @@ import menu_view
 import logging
 import stage
 import stage_view
+import stage_io
 
 
 class TickerController(object):
@@ -69,6 +70,7 @@ class GameApp(object):
         # TODO: Create MVC.
         stage_model = stage.StageModel(self._ev_manager)
         stage_pygame_view = stage_view.StagePygameView(self._ev_manager)
+        stage_controller = stage_io.StageIOController(self._ev_manager)
 
         # Init all components and start the ticker.
         self._ev_manager.post(events.InitEvent())
