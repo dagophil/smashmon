@@ -4,6 +4,9 @@ import collections
 import IPython
 
 
+# TODO: Group the events according to the model they belong to.
+
+
 class Event(object):
     """Superclass for any event that is sent to the event manager.
     """
@@ -16,8 +19,9 @@ class TickEvent(Event):
     """The tick event is sent once per iteration in the game loop.
     """
 
-    def __init__(self):
+    def __init__(self, elapsed_time):
         super(TickEvent, self).__init__(name="Tick")
+        self.elapsed_time = elapsed_time
 
 
 class InitEvent(Event):
@@ -117,6 +121,15 @@ class CloseCurrentModel(Event):
     def __init__(self, next_model_name):
         super(CloseCurrentModel, self).__init__(name="Close current model")
         self.next_model_name = next_model_name
+
+
+class WorldStep(Event):
+    """This event is called, when the (Box2D) world made a step.
+    """
+
+    def __init__(self, world):
+        super(WorldStep, self).__init__(name="World step")
+        self.world = world
 
 
 class EventManager(object):

@@ -4,6 +4,8 @@ import io
 import menu
 import menu_view
 import logging
+import stage
+import stage_view
 
 
 class TickerController(object):
@@ -20,9 +22,10 @@ class TickerController(object):
 
     def run(self):
         self._running = True
+        elapsed_time = 0
         while self._running:
-            self._ev_manager.post(events.TickEvent())
-            self._clock.tick(self._fps)
+            self._ev_manager.post(events.TickEvent(elapsed_time=elapsed_time))
+            elapsed_time = self._clock.tick(self._fps) / 1000.0  # elapsed time since last frame in seconds
 
     def notify(self, event):
         if isinstance(event, events.CloseCurrentModel):
@@ -45,7 +48,11 @@ class GameApp(object):
             "Stage": self._stage_model
         }
         self._ev_manager = events.EventManager()
-        self._ev_manager.next_model_name = "Main Menu"
+
+        # TODO: Start with the correct initial model.
+        # self._ev_manager.next_model_name = "Main Menu"
+        self._ev_manager.next_model_name = "Stage"
+
         self._ticker = TickerController(self._ev_manager, self._args.fps)
 
     def _main_menu_model(self):
@@ -64,11 +71,12 @@ class GameApp(object):
         logging.debug("GameApp: Loading stage model")
 
         # TODO: Create MVC.
+        stage_model = stage.StageModel(self._ev_manager)
+        stage_pygame_view = stage_view.StagePygameView(self._ev_manager)
 
-        # TODO: Uncomment after creating the MVC.
-        # # Init all components and start the ticker.
-        # self._ev_manager.post(events.InitEvent())
-        # self._ticker.run()
+        # Init all components and start the ticker.
+        self._ev_manager.post(events.InitEvent())
+        self._ticker.run()  # TODO: Uncomment after creating the MVC.
 
     def run(self):
         """Runs the game loop.
