@@ -159,7 +159,7 @@ class EventManager(object):
         if isinstance(event, TickEvent):
             while len(self._queue) > 0:
                 ev = self._queue.popleft()
-                if not isinstance(ev, TickEvent):
+                if not isinstance(ev, TickEvent) and not isinstance(ev, WorldStep):
                     logging.debug("Event: %s" % ev.name)
 
                 # Iterate over a copy of the dict, so even from within the loop listeners

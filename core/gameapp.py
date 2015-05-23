@@ -48,11 +48,7 @@ class GameApp(object):
             "Stage": self._stage_model
         }
         self._ev_manager = events.EventManager()
-
-        # TODO: Start with the correct initial model.
-        # self._ev_manager.next_model_name = "Main Menu"
-        self._ev_manager.next_model_name = "Stage"
-
+        self._ev_manager.next_model_name = self._args.model
         self._ticker = TickerController(self._ev_manager, self._args.fps)
 
     def _main_menu_model(self):

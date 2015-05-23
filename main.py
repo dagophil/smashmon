@@ -17,6 +17,9 @@ def parse_command_line():
                         help="Frames per second")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print verbose output")
+    parser.add_argument("--model", type=str, default="Main Menu",
+                        choices=["Main Menu", "Stage"],
+                        help="Initial model")
     args = parser.parse_args()
 
     assert args.width > 0
