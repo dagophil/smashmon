@@ -2,6 +2,7 @@ import pygame
 import logging
 import Box2D
 import events
+import IPython
 
 
 class StageModel(object):
@@ -9,29 +10,63 @@ class StageModel(object):
     Abstract model for stages.
     """
 
+    def _create_static_body(self, *args, **kwargs):
+        body = self._world.CreateStaticBody(*args, **kwargs)
+        body.userData = self._next_static_body_id
+        self._static_bodies[self._next_static_body_id] = body
+        self._next_static_body_id += 1
+        return body
+
+    def _create_dynamic_body(self, *args, **kwargs):
+        body = self._world.CreateDynamicBody(*args, **kwargs)
+        body.userData = self._next_dynamic_body_id
+        self._dynamic_bodies[self._next_dynamic_body_id] = body
+        self._next_dynamic_body_id += 1
+        return body
+
+    def _create_polygon_fixture(self, body, *args, **kwargs):
+        fixture = body.CreatePolygonFixture(*args, **kwargs)
+        fixture.userData = self._next_fixture_id
+        self._fixtures[self._next_fixture_id] = fixture
+        self._next_fixture_id += 1
+        return fixture
+
     def __init__(self, ev_manager):
         assert isinstance(ev_manager, events.EventManager)
         self._ev_manager = ev_manager
         self._ev_manager.register_listener(self)
         self._world = Box2D.b2World(gravity=(0, -10), doSleep=True)
+        self._static_bodies = {}
+        self._dynamic_bodies = {}
+        self._fixtures = {}
+        self._next_static_body_id = 0
+        self._next_dynamic_body_id = 0
+        self._next_fixture_id = 0
 
         # TODO: Load the game objects from a file instead of creating them here.
         # TODO: Add background image.
 
-        ground_body = self._world.CreateStaticBody(
-            position=(5, 1.5),  # this is the center point
-            shapes=Box2D.b2PolygonShape(box=(4, 0.5))  # this is half width and half height
+        ground_body = self._create_static_body(
+            position=(5, 1.5),  # center point
         )
 
-        dynamic_body = self._world.CreateDynamicBody(
-            position=(3, 7)
+        ground_body_fixture = self._create_polygon_fixture(
+            ground_body,
+            box=(4, 0.5)
         )
 
-        box = dynamic_body.CreatePolygonFixture(
-            box=(0.5, 0.6),
+        dynamic_body = self._create_dynamic_body(
+            position=(3, 7)  # center point
+        )
+
+        dynamic_body_fixture = self._create_polygon_fixture(
+            dynamic_body,
+            box=(0.5, 0.6),  # half of width, half of height
             density=1,
             friction=0.3
         )
+
+        # IPython.embed()
 
     def notify(self, event):
         if isinstance(event, events.InitEvent):
