@@ -1,6 +1,6 @@
 import pygame
 import events
-import io
+import menu_io
 import menu
 import menu_view
 import logging
@@ -57,7 +57,7 @@ class GameApp(object):
         # Create MVC.
         menu_pygame_view = menu_view.MenuPygameView(self._ev_manager)
         main_menu = menu.MainMenuModel(self._ev_manager)
-        menu_controller = io.MenuIOController(self._ev_manager, main_menu, menu_pygame_view)
+        menu_controller = menu_io.MenuIOController(self._ev_manager, main_menu, menu_pygame_view)
 
         # Init all components and start the ticker.
         self._ev_manager.post(events.InitEvent())
