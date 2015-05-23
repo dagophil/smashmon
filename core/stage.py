@@ -3,6 +3,7 @@ import logging
 import Box2D
 import events
 import IPython
+import math
 
 
 class StageModel(object):
@@ -88,3 +89,24 @@ class StageModel(object):
                 self._next_character_id += 1
                 self._character_ids[controller_id] = character_id
             self._ev_manager.post(events.AssignCharacterId(controller_id, character_id))
+        elif isinstance(event, events.CharacterMoveLeftRequest):
+            character_id = event.character_id
+            body = self._dynamic_bodies[0]
+            body.ApplyLinearImpulse((-0.2, 0), body.worldCenter, True)
+            MAX_VELO = 2.7
+            if abs(body.linearVelocity[0]) > MAX_VELO:
+                body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
+            # TODO: Move the character to the left.
+        elif isinstance(event, events.CharacterMoveRightRequest):
+            character_id = event.character_id
+            body = self._dynamic_bodies[0]
+            body.ApplyLinearImpulse((0.2, 0), body.worldCenter, True)
+            MAX_VELO = 2.7
+            if abs(body.linearVelocity[0]) > MAX_VELO:
+                body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
+            # TODO: Move the character to the right.
+        elif isinstance(event, events.CharacterJumpRequest):
+            character_id = event.character_id
+            body = self._dynamic_bodies[0]
+            body.ApplyLinearImpulse((0, 10), body.worldCenter, True)
+            # TODO: Let the character jump (but only when he touches the ground).

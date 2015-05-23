@@ -168,6 +168,15 @@ class CharacterMoveRightRequest(Event):
         self.character_id = character_id
 
 
+class CharacterJumpRequest(Event):
+    """This event is sent, when a controller wants a character to jump.
+    """
+
+    def __init__(self, character_id):
+        super(CharacterJumpRequest, self).__init__(name="Character jump request")
+        self.character_id = character_id
+
+
 class EventManager(object):
     """
     Receives events and posts them to all _listeners.

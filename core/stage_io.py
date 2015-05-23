@@ -22,14 +22,17 @@ class StageIOController(object):
                 self._character_id = event.character_id
                 logging.debug("Controller %d (%s) got character %d" % (self._id, self.__class__.__name__, self._character_id))
         elif isinstance(event, events.TickEvent):
+            # Handle key down events.
             for pygame_event in pygame.event.get():
                 if pygame_event.type == pygame.QUIT:
                     self._ev_manager.post(events.CloseCurrentModel(next_model_name=None))
                 elif pygame_event.type == pygame.KEYDOWN:
                     if pygame_event.key == pygame.K_ESCAPE:
                         self._ev_manager.post(events.CloseCurrentModel(next_model_name=None))
-                    # logging.debug("Keydown: %s" % pygame.key.name(pygame_event.key))
+                    elif pygame_event.key == pygame.K_SPACE:
+                        self._ev_manager.post(events.CharacterJumpRequest(self._character_id))
 
+            # Handle key pressed events.
             pressed = pygame.key.get_pressed()
             if pressed[pygame.K_a]:
                 self._ev_manager.post(events.CharacterMoveLeftRequest(self._character_id))
