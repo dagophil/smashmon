@@ -49,6 +49,9 @@ class MenuPygameView(object):
         x, y = self.to_screen_xy(button.x, button.y)
         return im, (x, y)
 
+    def screen_size(self):
+        return self._screen.get_size()
+
     def notify(self, event):
         if isinstance(event, events.MenuCreatedEvent):
             self._bg_img = event.bg_img
@@ -69,6 +72,7 @@ class MenuPygameView(object):
             b = event.button
             im, (x, y) = self._get_button_image(b)
             self._screen.blit(im, (x, y))
-
-    def screen_size(self):
-        return self._screen.get_size()
+        elif isinstance(event, events.CloseCurrentModel):
+            next_model_name = event.next_model_name
+            if next_model_name != "Main Menu":
+                self._ev_manager.unregister_listener(self)

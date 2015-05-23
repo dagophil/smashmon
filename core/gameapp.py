@@ -14,11 +14,12 @@ class TickerController(object):
     def __init__(self, ev_manager, fps=60):
         self._ev_manager = ev_manager
         self._ev_manager.register_listener(self)
-        self._running = True
+        self._running = False
         self._fps = fps
         self._clock = pygame.time.Clock()
 
     def run(self):
+        self._running = True
         while self._running:
             self._ev_manager.post(events.TickEvent())
             self._clock.tick(self._fps)
@@ -39,29 +40,35 @@ class GameApp(object):
         :param args: command line arguments
         """
         self._args = args
-        self._ev_manager = events.EventManager()
-        # self._ev_manager.register_listener(self)
-        self._quit_app_requested = False
         self._models = {
-            "Main Menu": self.main_menu_model
+            "Main Menu": self._main_menu_model,
+            "Stage": self._stage_model
         }
-        self._next_model_name = "Main Menu"
+        self._ev_manager = events.EventManager()
+        self._ev_manager.next_model_name = "Main Menu"
+        self._ticker = TickerController(self._ev_manager, self._args.fps)
 
-    def main_menu_model(self):
+    def _main_menu_model(self):
+        logging.debug("GameApp: Loading main menu model")
+
         # Create MVC.
-        ticker = TickerController(self._ev_manager, self._args.fps)
         menu_pygame_view = menu_view.MenuPygameView(self._ev_manager)
         main_menu = menu.MainMenuModel(self._ev_manager)
         menu_controller = io.MenuIOController(self._ev_manager, main_menu, menu_pygame_view)
 
-        # The MVC is set up, so all components can be initialized.
+        # Init all components and start the ticker.
         self._ev_manager.post(events.InitEvent())
+        self._ticker.run()
 
-        # Start the heart beat.
-        ticker.run()
+    def _stage_model(self):
+        logging.debug("GameApp: Loading stage model")
 
-        # Get the next model.
-        self._next_model_name = self._ev_manager.next_model_name
+        # TODO: Create MVC.
+
+        # TODO: Uncomment after creating the MVC.
+        # # Init all components and start the ticker.
+        # self._ev_manager.post(events.InitEvent())
+        # self._ticker.run()
 
     def run(self):
         """Runs the game loop.
@@ -69,20 +76,14 @@ class GameApp(object):
         # Show the window.
         pygame.display.set_mode((self._args.width, self._args.height))
 
-        while self._next_model_name is not None:
-            # Initialize and run the next model.
-            if self._next_model_name in self._models:
-                self._models[self._next_model_name]()
+        while self._ev_manager.next_model_name is not None:
+            if self._ev_manager.next_model_name in self._models:
+                # Load and run the next model.
+                model = self._models[self._ev_manager.next_model_name]
+                self._ev_manager.next_model_name = None
+                model()
             else:
-                raise Exception("Unknown model name: %s" % self._next_model_name)
-
-            if self._quit_app_requested:
-                break
-            elif self._next_model_name is None:
-                logging.warning("GameApp: The current model finished and did not set a new model, "
-                                "but there was no quit event.")
-            else:
-                logging.warning("TODO: Clean the listeners before loading the next model.")
+                raise Exception("Unknown model name: %s" % self._ev_manager.next_model_name)
 
         # Quit when all models finished.
         pygame.quit()

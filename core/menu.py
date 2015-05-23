@@ -110,8 +110,7 @@ class MainMenuModel(MenuModel):
         super(MainMenuModel, self).__init__(ev_manager, menu_bg, buttons=buttons)
 
     def load_level(self):
-        # TODO: Change this to some real model.
-        self._ev_manager.post(events.CloseCurrentModel(next_model_name="Level 1"))
+        self._ev_manager.post(events.CloseCurrentModel(next_model_name="Stage"))
 
     def notify(self, event):
         if isinstance(event, events.InitEvent):
@@ -137,3 +136,5 @@ class MainMenuModel(MenuModel):
             self._ev_manager.post(events.ButtonActionEvent(b))
             b.set_hovered()
             self._ev_manager.post(events.ButtonHoverEvent(b))
+        elif isinstance(event, events.CloseCurrentModel):
+            self._ev_manager.unregister_listener(self)

@@ -47,3 +47,5 @@ class MenuIOController(object):
                         if b.x <= x <= b.x + b.width and b.y <= y <= b.y + b.height:
                             if b.is_pressed():
                                 self._ev_manager.post(events.ButtonActionRequestedEvent(b))
+        elif isinstance(event, events.CloseCurrentModel):
+            self._ev_manager.unregister_listener(self)

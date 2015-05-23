@@ -132,10 +132,12 @@ class EventManager(object):
 
     def register_listener(self, listener):
         self._listeners[listener] = 1
+        logging.debug("Register listener: %s" % listener.__class__.__name__)
 
     def unregister_listener(self, listener):
         if listener in self._listeners:
             del self._listeners[listener]
+            logging.debug("Unregister listener: %s" % listener.__class__.__name__)
 
     def post(self, event):
         self._queue.append(event)

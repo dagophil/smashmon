@@ -36,12 +36,12 @@ class ResourceManager(object):
             size = (0, 0)
         if (filename, size) not in self._images:
             try:
-                logging.debug("Loading image from file: %s" % filename)
+                logging.debug("Resource Manager: Loading image from file: %s" % filename)
                 im = pygame.image.load(filename).convert()
             except pygame.error:
                 raise IOError("File %s not found." % filename)
             if size != (0, 0):
-                logging.debug("Resizing image %s to (%d, %d)" % (filename, size[0], size[1]))
+                logging.debug("Resource Manager: Resizing image %s to (%d, %d)" % (filename, size[0], size[1]))
                 im = pygame.transform.scale(im, size)
             self._images[(filename, size)] = im
             return im
