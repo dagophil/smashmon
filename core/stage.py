@@ -22,19 +22,32 @@ class StageModel(object):
         self._next_id = 0
         self.colors = {}
 
-        ground_body = self.world.CreateStaticBody(position=(5, 1.5))
-        ground_body_fixture = ground_body.CreatePolygonFixture(box=(4, 0.5))
+        ground_body = self.world.CreateStaticBody(position=(5, 0.5))
+        ground_body.CreatePolygonFixture(box=(4, 0.25))
+        ground_body.CreatePolygonFixture(vertices=[(-4.5, -0.25), (-4, -0.25), (-4, 5), (-4.5, 5)])
+        ground_body.CreatePolygonFixture(vertices=[(4.5, -0.25), (4, -0.25), (4, 5), (4.5, 5)])
+        ground_body.CreatePolygonFixture(vertices=[(-0.5, 0.25), (0, 0.75), (0.5, 0.25)])
         ground_id = self._add_world_object(ground_body)
         self.colors[ground_id] = (255, 255, 255, 255)
 
-        dynamic_body = self.world.CreateDynamicBody(position=(3, 7))
-        dynamic_body_fixture = dynamic_body.CreatePolygonFixture(
+        char0_body = self.world.CreateDynamicBody(position=(3, 7))
+        char0_body.CreatePolygonFixture(
             box=(0.5, 0.5),
             density=1,
             friction=0.3
         )
-        char_id = self._add_character(dynamic_body)
-        self.colors[char_id] = (127, 127, 127, 255)
+        char0_id = self._add_character(char0_body)
+        self.colors[char0_id] = (127, 200, 127, 255)
+
+        char1_body = self.world.CreateDynamicBody(position=(7, 7))
+        char1_body.CreatePolygonFixture(
+            box=(0.5, 0.5),
+            density=1,
+            friction=0.3
+        )
+        char1_id = self._add_character(char1_body)
+        self.colors[char1_id] = (127, 127, 200, 255)
+
         # TODO: Load the game objects from a file instead of creating them here.
         # TODO: Add background image.
         # TODO: Load all stuff in the init event and not in the constructor.
