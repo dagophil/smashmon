@@ -20,6 +20,8 @@ def parse_command_line():
     parser.add_argument("--model", type=str, default="Main Menu",
                         choices=["Main Menu", "Stage"],
                         help="Initial model")
+    parser.add_argument("--server", action="store_true",
+                        help="Run as a server")
     args = parser.parse_args()
 
     assert args.width > 0
@@ -40,6 +42,7 @@ def main():
     args = parse_command_line()
     app = GameApp(args)
     app.run()
+    print "end of main function"
 
 
 if __name__ == "__main__":

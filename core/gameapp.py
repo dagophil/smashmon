@@ -7,6 +7,7 @@ import logging
 import stage
 import stage_view
 import stage_io
+import network
 
 
 class TickerController(object):
@@ -79,6 +80,59 @@ class GameApp(object):
     def run(self):
         """Runs the game loop.
         """
+
+        if self._args.server:
+
+            port = 57122
+            network_server = network.NetworkServer(port)
+
+            import time
+            print "Waiting for clients ..."
+            time.sleep(5)
+            print "Done waiting for clients."
+            network_server.update_client_list()
+
+            print "Waiting for messages ..."
+            time.sleep(5)
+            print "Done waiting for messages."
+
+            print "Getting objects"
+            obj_list = network_server.get_objects()
+            print "Got objects"
+            for obj in obj_list:
+                print "Received object:", obj
+
+            print "trying to close"
+            network_server.close_all()
+            print "closed"
+
+        else:
+            import socket
+            host = socket.gethostname()
+            port = 57122
+            network_client = network.NetworkClient(host, port)
+
+            print "Sleeping"
+            import time
+            time.sleep(5)
+
+            s0 = "this is a string"
+            s1 = "hello"
+            s2 = "foo"
+            print "Trying to send s0:", s0
+            network_client.send(s0)
+            print "Trying to send s1:", s1
+            network_client.send(s1)
+            print "Trying to send s2:", s2
+            network_client.send(s2)
+            print "Done sending"
+
+            network_client.close_all()
+
+
+        return
+
+
         # Show the window.
         pygame.display.set_mode((self._args.width, self._args.height))
 
