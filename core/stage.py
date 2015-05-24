@@ -22,6 +22,7 @@ class StageModel(object):
         self._next_id = 0
         self.colors = {}
 
+    def _create_dummy_level(self):
         ground_body = self.world.CreateStaticBody(position=(5, 0.5))
         ground_body.CreatePolygonFixture(box=(4, 0.25))
         ground_body.CreatePolygonFixture(vertices=[(-4.5, -0.25), (-4, -0.25), (-4, 5), (-4.5, 5)])
@@ -48,10 +49,6 @@ class StageModel(object):
         char1_id = self._add_character(char1_body)
         self.colors[char1_id] = (127, 127, 200, 255)
 
-        # TODO: Load the game objects from a file instead of creating them here.
-        # TODO: Add background image.
-        # TODO: Load all stuff in the init event and not in the constructor.
-
     def _add_world_object(self, obj):
         obj_id = self._next_id
         self._next_id += 1
@@ -75,6 +72,9 @@ class StageModel(object):
 
     def notify(self, event):
         if isinstance(event, events.InitEvent):
+            # TODO: Load the game objects from a file.
+            # TODO: Add background image.
+            self._create_dummy_level()
             for i, k in enumerate(self._characters):
                 self._ev_manager.post(events.AssignCharacterId(i, k))
         elif isinstance(event, events.TickEvent):
