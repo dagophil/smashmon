@@ -3,6 +3,7 @@ import logging
 import collections
 import json
 import IPython
+import network
 
 
 class Event(object):
@@ -207,6 +208,47 @@ class EventManager(object):
                     l.notify(ev)
 
 
+class NetworkEventManager(EventManager):
+    """
+    This event manager can be used between a normal event manager and some controllers.
+    All events coming from the controllers are sent over network (and not posted in the normal event manager).
+    All events coming from the normal event manager are given to the controllers.
+    """
+
+    def __init__(self, ev_manager, host, port=32072):
+        assert isinstance(ev_manager, EventManager)
+        self._ev_manager = ev_manager
+        self._ev_manager.register_listener(self)
+        super(NetworkEventManager, self).__init__()
+        self._client = network.NetworkClient(host=host, port=port, decode=to_event, encode=to_string)
+        self._ignore_events = [TickEvent, InitEvent]
+        # TODO: Complete the list of ignore-events. What about WorldStep and CloseCurrentModel?
+
+    def post(self, event):
+        for cls in self._ignore_events:
+            if isinstance(event, cls):
+                break
+        else:
+            self._client.send(event)
+
+    def notify(self, event):
+        listeners = list(self._listeners)
+        for l in listeners:
+            l.notify(event)
+
+        if isinstance(event, TickEvent):
+            event_list = self._client.get_objects()
+            for ev in event_list:
+                for cls in self._ignore_events:
+                    if isinstance(ev, cls):
+                        break
+                else:
+                    self._ev_manager.post(ev)
+
+    def shutdown(self):
+        self._client.close_all()
+
+
 # Create a dictionary {class_identifier: class} and a dictionary {class: class_identifier}.
 # Currently, __class__.__name__ is used as identifier, but this may change later.
 _event_classes = [TickEvent, InitEvent, MenuCreatedEvent, ButtonHoverRequestedEvent, ButtonUnhoverRequestedEvent,
@@ -241,24 +283,3 @@ def to_event(s):
     event = object.__new__(cls)
     event.__dict__.update(event_dict)
     return event
-
-
-# class NetworkEventManager(events.EventManager):
-#     """
-#     Receives events and sends them over network.
-#     """
-#
-#     def __init__(self, ev_manager):
-#         assert isinstance(ev_manager, events.EventManager)
-#         self._ev_manager = ev_manager
-#         self._ev_manager.register_listener(self)
-#         super(NetworkEventManager, self).__init__()
-#
-#     def post(self, event):
-#         # TODO: Send event over network.
-#         pass
-#
-#     def notify(self, event):
-#         listeners = list(self._listeners)
-#         for l in listeners:
-#             l.notify(event)

@@ -1,5 +1,6 @@
 import network
 import events
+import logging
 
 
 class ServerController(object):
@@ -12,7 +13,7 @@ class ServerController(object):
         assert isinstance(ev_manager, events.EventManager)
         self._ev_manager = ev_manager
         self._ev_manager.register_listener(self)
-        self._server = network.NetworkServer(port=port)
+        self._server = network.NetworkServer(port=port, decode=events.to_event, encode=events.to_string)
         self._max_num_clients = max_num_clients
         self._num_clients = 0
         self._ignore_events = [events.TickEvent, events.InitEvent]
@@ -39,3 +40,6 @@ class ServerController(object):
                 break
         else:
             self._server.broadcast(event)
+
+    def shutdown(self):
+        self._server.close_all()

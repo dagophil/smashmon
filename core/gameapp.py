@@ -8,6 +8,7 @@ import stage
 import stage_view
 import stage_io
 import network
+import network_controller
 
 
 class TickerController(object):
@@ -68,28 +69,36 @@ class GameApp(object):
     def _stage_model(self):
         logging.debug("GameApp: Loading stage model")
 
-        if not self._args.client:
-            # Network-Server or single-player.
+        if self._args.server:
             stage_model = stage.StageModel(self._ev_manager)
             stage_pygame_view = stage_view.StagePygameView(self._ev_manager, stage_model)
             stage_controller = stage_io.StageIOController(self._ev_manager, character_index=0)
-
-            if self._args.server:
-                # TODO: Add controller that sends all events over network and posts all network-received events.
-                pass
-        else:
+            network_server_controller = network_controller.ServerController(self._ev_manager, max_num_clients=1)
+        elif self._args.client:
             # Network-Client.
-            # TODO: Use a network event manager.
-
             stage_model = stage.StageModel(self._ev_manager)
             stage_pygame_view = stage_view.StagePygameView(self._ev_manager, stage_model)
-            stage_controller = stage_io.StageIOController(self._ev_manager, character_index=1)
+
+            # TODO: Somehow get the host.
+            from socket import gethostname
+            network_ev_manager = events.NetworkEventManager(self._ev_manager, gethostname())
+            stage_controller = stage_io.StageIOController(network_ev_manager, character_index=1)
+        else:
+            # Single-player.
+            stage_model = stage.StageModel(self._ev_manager)
+            stage_pygame_view = stage_view.StagePygameView(self._ev_manager, stage_model)
+            stage_controller = stage_io.StageIOController(self._ev_manager, character_index=0)
 
         # TODO: Somehow get the character index from the menu.
 
         # Init all components and start the ticker.
         self._ev_manager.post(events.InitEvent())
         self._ticker.run()
+
+        if self._args.server:
+            network_server_controller.shutdown()
+        elif self._args.client:
+            network_ev_manager.shutdown()
 
     def run(self):
         """Runs the game loop.
