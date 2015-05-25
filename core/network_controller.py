@@ -34,4 +34,8 @@ class ServerController(object):
                 else:
                     self._ev_manager.post(ev)
 
-        # TODO: Send event over network.
+        for cl in self._ignore_events:
+            if isinstance(event, cl):
+                break
+        else:
+            self._server.broadcast(event)

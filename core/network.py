@@ -84,12 +84,11 @@ def listen_on_connection(conn, qu, stop_event, timeout=1.0):
             data_len = int(data_string[:r_index])
             data_string = data_string[r_index+1:]
 
-        # Create the received object.
+        # Decode the received string to an object.
         if len(data_string) >= data_len:
             obj_string = data_string[:data_len]
             data_string = data_string[data_len:]
-            obj = json.loads(obj_string)
-            qu.put(obj, block=True)
+            qu.put(obj_string, block=True)
             data_len = None
 
     logging.debug("Network: Closed client connection.")
@@ -100,16 +99,26 @@ class NetworkServer(object):
     """
     The NetworkServer class accepts connections from clients and can be used to send and receive arbitrary objects.
     Before the server listens to an accepted connection, the update_client_list() method must be called.
+    The constructor takes methods to encode an object to a string and decode a string to an object. If those methods are
+    not given, json.dumps() and json.loads() is used.
 
     Internally, the following protocol is used to send data:
     def send(obj):
-        data_string = json.dumps(obj)
+        data_string = encode(obj)
         send_string = str(len(data_string)) + "#" + data_string
         socket.send(send_string)
     """
 
-    def __init__(self, port):
+    def __init__(self, port, decode=None, encode=None):
         self._port = port
+        if decode is None:
+            self._decode = json.loads
+        else:
+            self._decode = decode
+        if encode is None:
+            self._encode = json.dumps
+        else:
+            self._encode = encode
         self._clients = []
         self._client_queue = Queue.Queue()
         self._client_listeners = []
@@ -154,7 +163,9 @@ class NetworkServer(object):
         """
         items = []
         while not self._item_queue.empty():
-            items.append(self._item_queue.get())
+            item_string = self._item_queue.get()
+            item = self._decode(item_string)
+            items.append(item)
             self._item_queue.task_done()
         return items
 
@@ -170,7 +181,7 @@ class NetworkServer(object):
     def broadcast(self, obj):
         """Send the object to all clients.
         """
-        data = json.dumps(obj)
+        data = self._encode(obj)
         data_string = str(len(data)) + "#" + data
         for c, addr, t in self._clients:
             c.sendall(data_string)
@@ -179,15 +190,25 @@ class NetworkServer(object):
 class NetworkClient(object):
     """
     The NetworkClient class connects to a server and can send and receive arbitrary objects.
+    The constructor takes methods to encode an object to a string and decode a string to an object. If those methods are
+    not given, json.dumps() and json.loads() is used.
 
     Internally, the following protocol is used to send data:
     def send(obj):
-        data_string = json.dumps(obj)
+        data_string = encode(obj)
         send_string = str(len(data_string)) + "#" + data_string
         socket.send(send_string)
     """
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, decode=None, encode=None):
+        if decode is None:
+            self._decode = json.loads
+        else:
+            self._decode = decode
+        if encode is None:
+            self._encode = json.dumps
+        else:
+            self._encode = encode
         self._queue = Queue.Queue()
         self._stop = threading.Event()
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -199,7 +220,7 @@ class NetworkClient(object):
     def send(self, obj):
         """Send the object to the server.
         """
-        data = json.dumps(obj)
+        data = self._encode(obj)
         data_string = str(len(data)) + "#" + data
         self._socket.sendall(data_string)
 
@@ -208,7 +229,9 @@ class NetworkClient(object):
         """
         items = []
         while not self._queue.empty():
-            items.append(self._queue.get())
+            item_string = self._queue.get()
+            item = self._decode(item_string)
+            items.append(item)
             self._queue.task_done()
         return items
 

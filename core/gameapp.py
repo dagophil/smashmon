@@ -94,11 +94,11 @@ class GameApp(object):
     def run(self):
         """Runs the game loop.
         """
-        #
+
         # if self._args.server:
         #
         #     port = 57122
-        #     network_server = network.NetworkServer(port)
+        #     network_server = network.NetworkServer(port, decode=events.to_event, encode=events.to_string)
         #
         #     import time
         #     print "Waiting for clients ..."
@@ -116,8 +116,10 @@ class GameApp(object):
         #     print "Got objects"
         #     to_send = []
         #     for obj in obj_list:
-        #         print "Received object:", obj
-        #         to_send.append(obj + " FROM SERVER!")
+        #         print "Received object:", obj, "dict:", obj.__dict__
+        #         # to_send.append(obj + " FROM SERVER!")
+        #         obj.elapsed_time = 2
+        #         to_send.append(obj)
         #
         #     print "Sending objects"
         #     for obj in to_send:
@@ -132,21 +134,25 @@ class GameApp(object):
         #     import socket
         #     host = socket.gethostname()
         #     port = 57122
-        #     network_client = network.NetworkClient(host, port)
+        #     network_client = network.NetworkClient(host, port, decode=events.to_event, encode=events.to_string)
         #
         #     print "Sleeping"
         #     import time
         #     time.sleep(5)
         #
-        #     s0 = "this is a string"
-        #     s1 = "hello"
-        #     s2 = "foo"
-        #     print "Trying to send s0:", s0
-        #     network_client.send(s0)
-        #     print "Trying to send s1:", s1
-        #     network_client.send(s1)
-        #     print "Trying to send s2:", s2
-        #     network_client.send(s2)
+        #     # s0 = "this is a string"
+        #     # s1 = "hello"
+        #     # s2 = "foo"
+        #     # print "Trying to send s0:", s0
+        #     # network_client.send(s0)
+        #     # print "Trying to send s1:", s1
+        #     # network_client.send(s1)
+        #     # print "Trying to send s2:", s2
+        #     # network_client.send(s2)
+        #     print "Trying to send tick event"
+        #     ev = events.TickEvent(1.5)
+        #     network_client.send(ev)
+        #
         #     print "Done sending"
         #
         #     print "Waiting for incoming messages"
@@ -155,7 +161,7 @@ class GameApp(object):
         #     obj_list = network_client.get_objects()
         #     print "Got objects"
         #     for obj in obj_list:
-        #         print "Received object:", obj
+        #         print "Received object:", obj, "dict:", obj.__dict__
         #
         #     print "trying to close"
         #     network_client.close_all()

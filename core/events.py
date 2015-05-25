@@ -1,10 +1,8 @@
 import weakref
 import logging
 import collections
+import json
 import IPython
-
-
-# TODO: Group the events according to the model they belong to.
 
 
 class Event(object):
@@ -207,6 +205,42 @@ class EventManager(object):
                 listeners = list(self._listeners)
                 for l in listeners:
                     l.notify(ev)
+
+
+# Create a dictionary {class_identifier: class} and a dictionary {class: class_identifier}.
+# Currently, __class__.__name__ is used as identifier, but this may change later.
+_event_classes = [TickEvent, InitEvent, MenuCreatedEvent, ButtonHoverRequestedEvent, ButtonUnhoverRequestedEvent,
+                 ButtonHoverEvent, ButtonUnhoverEvent, ButtonPressRequestedEvent, ButtonPressEvent,
+                 ButtonActionRequestedEvent, ButtonActionEvent, CloseCurrentModel, WorldStep, AssignCharacterId,
+                 CharacterMoveLeftRequest, CharacterMoveRightRequest, CharacterJumpRequest]
+_str_to_cls = {}
+_cls_to_str = {}
+for _cls in _event_classes:
+    _s = _cls.__name__
+    _str_to_cls[_s] = _cls
+    _cls_to_str[_cls] = _s
+
+
+def to_string(event):
+    """Return a string that can be decoded to the given event.
+    """
+    cls_name = _cls_to_str[event.__class__]
+    event_dict = json.dumps(event.__dict__)
+    return cls_name + "#" + event_dict
+
+
+def to_event(s):
+    """Return the event that was encoded in the given string.
+    """
+    i = s.find("#")
+    if i == -1:
+        raise Exception("Could not find marker # in encoded event string.")
+    cls_name, event_dict_string = s[:i], s[i+1:]
+    cls = _str_to_cls[cls_name]
+    event_dict = json.loads(event_dict_string)
+    event = object.__new__(cls)
+    event.__dict__.update(event_dict)
+    return event
 
 
 # class NetworkEventManager(events.EventManager):
