@@ -207,3 +207,24 @@ class EventManager(object):
                 listeners = list(self._listeners)
                 for l in listeners:
                     l.notify(ev)
+
+
+# class NetworkEventManager(events.EventManager):
+#     """
+#     Receives events and sends them over network.
+#     """
+#
+#     def __init__(self, ev_manager):
+#         assert isinstance(ev_manager, events.EventManager)
+#         self._ev_manager = ev_manager
+#         self._ev_manager.register_listener(self)
+#         super(NetworkEventManager, self).__init__()
+#
+#     def post(self, event):
+#         # TODO: Send event over network.
+#         pass
+#
+#     def notify(self, event):
+#         listeners = list(self._listeners)
+#         for l in listeners:
+#             l.notify(event)

@@ -1,7 +1,5 @@
-import events
 import socket
 import logging
-import sys
 import json
 import Queue
 import threading
@@ -166,14 +164,24 @@ class NetworkServer(object):
         for c, addr, t in self._clients:
             t.join()
 
+    def broadcast(self, obj):
+        """Send the object to all clients.
+        """
+        data = json.dumps(obj)
+        data_string = str(len(data)) + "#" + data
+        for c, addr, t in self._clients:
+            c.sendall(data_string)
+
 
 class NetworkClient(object):
     """
     The NetworkClient class connects to a server and can send and receive arbitrary objects.
 
-    Protocol:
-    data_string = json.dumps(obj)
-    sent_string = str(len(data_string)) + "#" + data_string
+    Internally, the following protocol is used to send data:
+    def send(obj):
+        data_string = json.dumps(obj)
+        send_string = str(len(data_string)) + "#" + data_string
+        socket.send(send_string)
     """
 
     def __init__(self, host, port):
@@ -186,6 +194,8 @@ class NetworkClient(object):
         self._network_listener.start()
 
     def send(self, obj):
+        """Send the object to the server.
+        """
         data = json.dumps(obj)
         data_string = str(len(data)) + "#" + data
         self._socket.sendall(data_string)
@@ -202,24 +212,3 @@ class NetworkClient(object):
     def close_all(self):
         self._stop.set()
         self._network_listener.join()
-
-
-# class NetworkEventManager(events.EventManager):
-#     """
-#     Receives events and sends them over network.
-#     """
-#
-#     def __init__(self, ev_manager):
-#         assert isinstance(ev_manager, events.EventManager)
-#         self._ev_manager = ev_manager
-#         self._ev_manager.register_listener(self)
-#         super(NetworkEventManager, self).__init__()
-#
-#     def post(self, event):
-#         # TODO: Send event over network.
-#         pass
-#
-#     def notify(self, event):
-#         listeners = list(self._listeners)
-#         for l in listeners:
-#             l.notify(event)

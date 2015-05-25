@@ -100,8 +100,15 @@ class GameApp(object):
             print "Getting objects"
             obj_list = network_server.get_objects()
             print "Got objects"
+            to_send = []
             for obj in obj_list:
                 print "Received object:", obj
+                to_send.append(obj + " FROM SERVER!")
+
+            print "Sending objects"
+            for obj in to_send:
+                network_server.broadcast(obj)
+            print "Done sending"
 
             print "trying to close"
             network_server.close_all()
@@ -128,7 +135,17 @@ class GameApp(object):
             network_client.send(s2)
             print "Done sending"
 
+            print "Waiting for incoming messages"
+            time.sleep(5)
+            print "Getting objects"
+            obj_list = network_client.get_objects()
+            print "Got objects"
+            for obj in obj_list:
+                print "Received object:", obj
+
+            print "trying to close"
             network_client.close_all()
+            print "closed"
 
 
         return
