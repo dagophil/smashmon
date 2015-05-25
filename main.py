@@ -42,7 +42,6 @@ def main():
     args = parse_command_line()
     app = GameApp(args)
     app.run()
-    print "end of main function"
 
 
 if __name__ == "__main__":

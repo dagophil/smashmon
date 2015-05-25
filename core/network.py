@@ -59,7 +59,7 @@ def listen_on_connection(conn, qu, stop_event, timeout=1.0):
     while True:
         if stop_event.isSet() or connection_lost:
             break
-        print "current data string:", data_string
+
         # Get the data that will be appended to the data string.
         to_append = ""
         try:
@@ -70,16 +70,16 @@ def listen_on_connection(conn, qu, stop_event, timeout=1.0):
             connection_lost = True
         data_string += to_append
 
+        # Read the item size from the data string.
         if data_len is None:
-            # Read the item size from the data string.
             r_index = data_string.find("#")
             if r_index == -1:
                 continue
             data_len = int(data_string[:r_index])
             data_string = data_string[r_index+1:]
 
+        # Create the received object.
         if len(data_string) >= data_len:
-            # Create the received object.
             obj_string = data_string[:data_len]
             data_string = data_string[data_len:]
             obj = json.loads(obj_string)
@@ -148,26 +148,21 @@ class NetworkClient(object):
     """
 
     def __init__(self, host, port):
-        self._host = host
-        self._port = port
         self._queue = Queue.Queue()
         self._stop = threading.Event()
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect((host, port))
         logging.debug("Network: Established connection to %s:%d" % (host, port))
-        self._network_listener = threading.Thread(target=self._listen)
+        self._network_listener = threading.Thread(target=listen_on_connection, args=(self._socket, self._queue, self._stop))
         self._network_listener.start()
 
     def send(self, obj):
         data = json.dumps(obj)
         data_string = str(len(data)) + "#" + data
-        try:
-            self._socket.sendall(data_string)
-        except socket.error, msg:
-            logging.error("Failed to send via socket. Error code: %d. Error message: %s" % (msg[0], str(msg[1])))
+        self._socket.sendall(data_string)
 
     def get_objects(self):
-        """Take all items from the queue, put them in a list. Clear the queue and return the list.
+        """Take all items from the item queue, put them in a list. Clear the queue and return the list.
         """
         items = []
         while not self._queue.empty():
@@ -175,40 +170,9 @@ class NetworkClient(object):
             self._queue.task_done()
         return items
 
-    def _listen(self):
-        """Receive data from the socket, construct the object that was sent and put it in the queue.
-        """
-        data_string = ""
-        data_len = None
-        self._socket.settimeout(1)
-        while True:
-            if self._stop.isSet():
-                break
-            try:
-                data_string += self._socket.recv(4096)
-            except socket.timeout:
-                continue
-            if data_len is None:
-                r_index = data_string.find("#")
-                if r_index == -1:
-                    continue
-                data_len = int(data_string[:r_index])
-                data_string = data_string[r_index+1:]
-
-            if len(data_string) >= data_len:
-                full_data_string = data_string[:data_len]
-                data_string = data_string[data_len:]
-                obj = json.loads(full_data_string)
-                self._queue.put(obj, block=True)
-
     def close_all(self):
-        print "trying to close"
         self._stop.set()
-        print "waiting for listener to join"
         self._network_listener.join()
-        print "trying to close socket"
-        self._socket.close()
-        print "closed"
 
 
 # class NetworkEventManager(events.EventManager):
