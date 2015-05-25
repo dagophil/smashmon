@@ -117,6 +117,9 @@ class NetworkServer(object):
         self._stop = threading.Event()
         self._client_acceptor = None
 
+    def num_clients(self):
+        return len(self._clients)
+
     def accept_clients(self, max_num_connections=None):
         """
         Start a thread that accepts the given number of connections. If max_num_connections is None, all connections

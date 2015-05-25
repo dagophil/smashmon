@@ -68,9 +68,23 @@ class GameApp(object):
     def _stage_model(self):
         logging.debug("GameApp: Loading stage model")
 
-        stage_model = stage.StageModel(self._ev_manager)
-        stage_pygame_view = stage_view.StagePygameView(self._ev_manager, stage_model)
-        stage_controller = stage_io.StageIOController(self._ev_manager, character_index=0)
+        if not self._args.client:
+            # Network-Server or single-player.
+            stage_model = stage.StageModel(self._ev_manager)
+            stage_pygame_view = stage_view.StagePygameView(self._ev_manager, stage_model)
+            stage_controller = stage_io.StageIOController(self._ev_manager, character_index=0)
+
+            if self._args.server:
+                # TODO: Add controller that sends all events over network and posts all network-received events.
+                pass
+        else:
+            # Network-Client.
+            # TODO: Use a network event manager.
+
+            stage_model = stage.StageModel(self._ev_manager)
+            stage_pygame_view = stage_view.StagePygameView(self._ev_manager, stage_model)
+            stage_controller = stage_io.StageIOController(self._ev_manager, character_index=1)
+
         # TODO: Somehow get the character index from the menu.
 
         # Init all components and start the ticker.
@@ -80,76 +94,75 @@ class GameApp(object):
     def run(self):
         """Runs the game loop.
         """
-
-        if self._args.server:
-
-            port = 57122
-            network_server = network.NetworkServer(port)
-
-            import time
-            print "Waiting for clients ..."
-            network_server.accept_clients(1)
-            time.sleep(5)
-            print "Done waiting for clients."
-            network_server.update_client_list()
-
-            print "Waiting for messages ..."
-            time.sleep(5)
-            print "Done waiting for messages."
-
-            print "Getting objects"
-            obj_list = network_server.get_objects()
-            print "Got objects"
-            to_send = []
-            for obj in obj_list:
-                print "Received object:", obj
-                to_send.append(obj + " FROM SERVER!")
-
-            print "Sending objects"
-            for obj in to_send:
-                network_server.broadcast(obj)
-            print "Done sending"
-
-            print "trying to close"
-            network_server.close_all()
-            print "closed"
-
-        else:
-            import socket
-            host = socket.gethostname()
-            port = 57122
-            network_client = network.NetworkClient(host, port)
-
-            print "Sleeping"
-            import time
-            time.sleep(5)
-
-            s0 = "this is a string"
-            s1 = "hello"
-            s2 = "foo"
-            print "Trying to send s0:", s0
-            network_client.send(s0)
-            print "Trying to send s1:", s1
-            network_client.send(s1)
-            print "Trying to send s2:", s2
-            network_client.send(s2)
-            print "Done sending"
-
-            print "Waiting for incoming messages"
-            time.sleep(5)
-            print "Getting objects"
-            obj_list = network_client.get_objects()
-            print "Got objects"
-            for obj in obj_list:
-                print "Received object:", obj
-
-            print "trying to close"
-            network_client.close_all()
-            print "closed"
-
-
-        return
-
+        #
+        # if self._args.server:
+        #
+        #     port = 57122
+        #     network_server = network.NetworkServer(port)
+        #
+        #     import time
+        #     print "Waiting for clients ..."
+        #     network_server.accept_clients(1)
+        #     time.sleep(5)
+        #     print "Done waiting for clients."
+        #     network_server.update_client_list()
+        #
+        #     print "Waiting for messages ..."
+        #     time.sleep(5)
+        #     print "Done waiting for messages."
+        #
+        #     print "Getting objects"
+        #     obj_list = network_server.get_objects()
+        #     print "Got objects"
+        #     to_send = []
+        #     for obj in obj_list:
+        #         print "Received object:", obj
+        #         to_send.append(obj + " FROM SERVER!")
+        #
+        #     print "Sending objects"
+        #     for obj in to_send:
+        #         network_server.broadcast(obj)
+        #     print "Done sending"
+        #
+        #     print "trying to close"
+        #     network_server.close_all()
+        #     print "closed"
+        #
+        # else:
+        #     import socket
+        #     host = socket.gethostname()
+        #     port = 57122
+        #     network_client = network.NetworkClient(host, port)
+        #
+        #     print "Sleeping"
+        #     import time
+        #     time.sleep(5)
+        #
+        #     s0 = "this is a string"
+        #     s1 = "hello"
+        #     s2 = "foo"
+        #     print "Trying to send s0:", s0
+        #     network_client.send(s0)
+        #     print "Trying to send s1:", s1
+        #     network_client.send(s1)
+        #     print "Trying to send s2:", s2
+        #     network_client.send(s2)
+        #     print "Done sending"
+        #
+        #     print "Waiting for incoming messages"
+        #     time.sleep(5)
+        #     print "Getting objects"
+        #     obj_list = network_client.get_objects()
+        #     print "Got objects"
+        #     for obj in obj_list:
+        #         print "Received object:", obj
+        #
+        #     print "trying to close"
+        #     network_client.close_all()
+        #     print "closed"
+        #
+        #
+        # return
 
         # Show the window.
         pygame.display.set_mode((self._args.width, self._args.height))

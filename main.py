@@ -20,10 +20,12 @@ def parse_command_line():
     parser.add_argument("--model", type=str, default="Main Menu",
                         choices=["Main Menu", "Stage"],
                         help="Initial model")
-    parser.add_argument("--server", action="store_true",
-                        help="Run as a server")
+    server_group = parser.add_mutually_exclusive_group()
+    server_group.add_argument("--server", action="store_true",
+                              help="Run as a server")
+    server_group.add_argument("--client", action="store_true",
+                              help="Run as a client")
     args = parser.parse_args()
-
     assert args.width > 0
     assert args.height > 0
     assert args.fps > 0
