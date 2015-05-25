@@ -7,7 +7,7 @@ import Queue
 import threading
 
 
-def accept_clients(port, qu, stop_event, timeout=1.0):
+def accept_clients(port, qu, stop_event, max_num_connections=None, timeout=1.0):
     """
     Listen for socket connections on the given port on the local machine. Accept all connections and put the tuple
     (connection, address) in the given queue. Exit when the stop event is set.
@@ -15,6 +15,7 @@ def accept_clients(port, qu, stop_event, timeout=1.0):
     :param port: port
     :param qu: queue to put the clients in
     :param stop_event: stop event
+    :param max_num_connections: maximum number of connections
     :param timeout: socket timeout
     """
     assert timeout > 0
@@ -29,22 +30,29 @@ def accept_clients(port, qu, stop_event, timeout=1.0):
     logging.debug("Network: Listening for connections on port %d" % port)
 
     # Listen for incoming connections.
+    count = 0
     while True:
         if stop_event.isSet():
             break
+        if max_num_connections is not None:
+            if count >= max_num_connections:
+                break
+
         sock.listen(5)
         try:
             c, addr = sock.accept()
         except socket.timeout:
             continue
-        logging.debug("Network: Accepted client with address %s" % str(addr))
         qu.put((c, addr))
+        count += 1
+        logging.debug("Network: Accepted client with address %s" % str(addr))
     sock.close()
 
 
 def listen_on_connection(conn, qu, stop_event, timeout=1.0):
     """
-    Listen on the given connection and put the received items in the given queue. Exit when the stop event is set.
+    Listen on the given connection and put the received items in the given queue. Exit when the stop event is set or
+    when the maximum number of connections is reached.
 
     :param conn: socket connection
     :param qu: queue to put the items in
@@ -109,10 +117,24 @@ class NetworkServer(object):
         self._client_listeners = []
         self._item_queue = Queue.Queue()
         self._stop = threading.Event()
-        self._client_acceptor = threading.Thread(target=accept_clients, args=(port, self._client_queue, self._stop))
+        self._client_acceptor = None
+
+    def accept_clients(self, max_num_connections=None):
+        """
+        Start a thread that accepts the given number of connections. If max_num_connections is None, all connections
+        are accepted until the server closes.
+
+        :param max_num_connections: maximum number of connections
+        """
+        if self._client_acceptor is not None:
+            raise Exception("The client acceptor is already running.")
+        self._client_acceptor = threading.Thread(target=accept_clients,
+                                                 args=(self._port, self._client_queue, self._stop, max_num_connections))
         self._client_acceptor.start()
 
     def update_client_list(self):
+        """Get all clients from the queue that is filled by the accept_clients thread and move them in a list.
+        """
         new_clients = []
         while not self._client_queue.empty():
             new_clients.append(self._client_queue.get())
@@ -121,8 +143,14 @@ class NetworkServer(object):
             t = threading.Thread(target=listen_on_connection, args=(c, self._item_queue, self._stop))
             t.start()
             self._clients.append((c, addr, t))
+        if self._client_acceptor is not None:
+            if not self._client_acceptor.isAlive():
+                logging.debug("Network: Accepted the desired number of connections.")
+                self._client_acceptor = None
 
     def get_objects(self):
+        """Return a list with all objects that came in from the listener threads.
+        """
         items = []
         while not self._item_queue.empty():
             items.append(self._item_queue.get())
@@ -133,7 +161,8 @@ class NetworkServer(object):
         """Close all connections and exit all threads.
         """
         self._stop.set()
-        self._client_acceptor.join()
+        if self._client_acceptor is not None:
+            self._client_acceptor.join()
         for c, addr, t in self._clients:
             t.join()
 

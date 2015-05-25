@@ -88,6 +88,7 @@ class GameApp(object):
 
             import time
             print "Waiting for clients ..."
+            network_server.accept_clients(1)
             time.sleep(5)
             print "Done waiting for clients."
             network_server.update_client_list()
