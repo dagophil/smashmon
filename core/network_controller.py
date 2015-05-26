@@ -28,9 +28,20 @@ class ServerController(object):
         if isinstance(event, events.InitEvent):
             self._server.accept_clients(max_num_connections=self._max_num_clients)
         elif isinstance(event, events.TickEvent):
+            # Update the client lists.
+            new_client_names, removed_client_names = self._server.update_client_list()
+            if self._num_clients != self._server.num_clients():
+                self._num_clients = self._server.num_clients()
+                if self._num_clients > self._max_num_clients:
+                    raise Exception("Maximum number of clients exceeded.")
+            for client in new_client_names:
+                self._ev_manager.post(events.ClientAccepted(client))
+            for client in removed_client_names:
+                self._ev_manager.post(events.ClientRemoved(client))
+
+
+
             # Get the network events from the clients and post them to the event manager.
-            if self._num_clients < self._max_num_clients:
-                self._server.update_client_list()
             network_events = self._server.get_objects()
             for ev in network_events:
                 # Send the event only if its class is not in the ignore list.

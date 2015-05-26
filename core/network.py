@@ -126,6 +126,7 @@ class NetworkServer(object):
         self._item_queue = Queue.Queue()
         self._client_acceptor = None
         self._stop_acceptor = None
+        self._to_be_removed = []  # list of client indices that should be removed on the next update call
 
     def num_clients(self):
         return len(self._clients)
@@ -147,23 +148,42 @@ class NetworkServer(object):
         self._client_acceptor.start()
 
     def update_client_list(self):
-        """Get all clients from the queue that is filled by the accept_clients thread and move them in a list.
         """
+        Get all clients from the queue that is filled by the accept_clients thread and move them in a list.
+        Remove all clients that could not be reached by the broadcast method.
+        """
+        # Get the new clients.
         new_clients = []
         while not self._client_queue.empty():
             new_clients.append(self._client_queue.get())
             self._client_queue.task_done()
+        new_client_names = []
         for c, addr in new_clients:
+            new_client_names.append(addr)
             stop = threading.Event()
             self._stop_clients.append(stop)
             t = threading.Thread(target=listen_on_connection, args=(c, self._item_queue, stop))
             t.daemon = True
             t.start()
             self._clients.append((c, addr, t))
+
+        # Check if the client acceptor is done.
         if self._client_acceptor is not None:
             if not self._client_acceptor.isAlive():
                 logging.debug("Network: Accepted the desired number of connections.")
                 self._client_acceptor = None
+
+        # Remove old clients.
+        removed_client_names = []
+        for i in reversed(self._to_be_removed):
+            self._stop_clients[i].set()
+            removed_client_names.append(self._clients[i][1])
+            del self._clients[i]
+            del self._stop_clients[i]
+        self._to_be_removed = []
+        # TODO: Eventually restart the network acceptor.
+
+        return new_client_names, removed_client_names
 
     def get_objects(self):
         """Return a list with all objects that came in from the listener threads.
@@ -192,18 +212,12 @@ class NetworkServer(object):
         """
         data = self._encode(obj)
         data_string = str(len(data)) + "#" + data
-        to_remove = []
         for i, (c, addr, t) in enumerate(self._clients):
             try:
                 c.sendall(data_string)
             except socket.error:
                 # The client has closed the connection.
-                to_remove.append(i)
-
-        for i in reversed(to_remove):
-            self._stop_clients[i].set()
-            del self._clients[i]
-            del self._stop_clients[i]
+                self._to_be_removed.append(i)
 
 
 class NetworkClient(object):

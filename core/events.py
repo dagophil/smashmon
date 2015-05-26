@@ -206,6 +206,24 @@ class ModelMetaBroadcast(Event):
         self.data = data
 
 
+class ClientAccepted(Event):
+    """This event is sent when the server has accepted a new client.
+    """
+
+    def __init__(self, client_name):
+        super(ClientAccepted, self).__init__(name="Client accepted")
+        self.client_name = client_name
+
+
+class ClientRemoved(Event):
+    """This event is sent when the server has removed a client.
+    """
+
+    def __init__(self, client_name):
+        super(ClientRemoved, self).__init__(name="Client removed")
+        self.client_name = client_name
+
+
 class EventManager(object):
     """
     Receives events and posts them to all _listeners.
@@ -296,7 +314,7 @@ _event_classes = [TickEvent, InitEvent, MenuCreatedEvent, ButtonHoverRequestedEv
                   ButtonHoverEvent, ButtonUnhoverEvent, ButtonPressRequestedEvent, ButtonPressEvent,
                   ButtonActionRequestedEvent, ButtonActionEvent, CloseCurrentModel, WorldStep, AssignCharacterId,
                   CharacterMoveLeftRequest, CharacterMoveRightRequest, CharacterJumpRequest, ModelBroadcastRequest,
-                  ModelBroadcast, ModelMetaBroadcast, ModelMetaBroadcastRequest]
+                  ModelBroadcast, ModelMetaBroadcast, ModelMetaBroadcastRequest, ClientAccepted, ClientRemoved]
 _str_to_cls = {}
 _cls_to_str = {}
 for _cls in _event_classes:
