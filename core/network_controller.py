@@ -22,7 +22,7 @@ class ServerController(object):
         # TODO: Complete the list of ignore-events. What about events.WorldStep and events.CloseCurrentModel?
 
         self._last_model_broadcast = 0  # elapsed time since the model was sent to all clients
-        self._model_broadcast_interval = 0.5  # the model is sent
+        self._model_broadcast_interval = 1.0  # the network clients are updated in this interval
 
     def notify(self, event):
         if isinstance(event, events.InitEvent):
