@@ -8,10 +8,10 @@ import math
 
 class StageModel(object):
     """
-    Abstract model for stages.
+    The stage model.
     """
 
-    def __init__(self, ev_manager):
+    def __init__(self, ev_manager, ignore_model_broadcasts=False):
         assert isinstance(ev_manager, events.EventManager)
         self._ev_manager = ev_manager
         self._id = self._ev_manager.register_listener(self)
@@ -21,6 +21,8 @@ class StageModel(object):
         self._characters = {}
         self._next_id = 0
         self.colors = {}
+        self._ignore_model_broadcasts = ignore_model_broadcasts
+        self._meta = None
 
     def _create_dummy_level(self):
         ground_body = self.world.CreateStaticBody(position=(5, 0.5))
@@ -31,23 +33,23 @@ class StageModel(object):
         ground_id = self._add_world_object(ground_body)
         self.colors[ground_id] = (255, 255, 255, 255)
 
-        char0_body = self.world.CreateDynamicBody(position=(3, 7))
-        char0_body.CreatePolygonFixture(
-            box=(0.5, 0.5),
-            density=1,
-            friction=0.3
-        )
-        char0_id = self._add_character(char0_body)
-        self.colors[char0_id] = (127, 200, 127, 255)
-
-        char1_body = self.world.CreateDynamicBody(position=(7, 7))
-        char1_body.CreatePolygonFixture(
-            box=(0.5, 0.5),
-            density=1,
-            friction=0.3
-        )
-        char1_id = self._add_character(char1_body)
-        self.colors[char1_id] = (127, 127, 200, 255)
+        # char0_body = self.world.CreateDynamicBody(position=(3, 7))
+        # char0_body.CreatePolygonFixture(
+        #     box=(0.5, 0.5),
+        #     density=1,
+        #     friction=0.3
+        # )
+        # char0_id = self._add_character(char0_body)
+        # self.colors[char0_id] = (127, 200, 127, 255)
+        #
+        # char1_body = self.world.CreateDynamicBody(position=(7, 7))
+        # char1_body.CreatePolygonFixture(
+        #     box=(0.5, 0.5),
+        #     density=1,
+        #     friction=0.3
+        # )
+        # char1_id = self._add_character(char1_body)
+        # self.colors[char1_id] = (127, 127, 200, 255)
 
     def _add_world_object(self, obj):
         obj_id = self._next_id
@@ -72,33 +74,82 @@ class StageModel(object):
 
     def notify(self, event):
         if isinstance(event, events.InitEvent):
+            self._ev_manager.post(events.ModelMetaBroadcastRequest())
             # TODO: Load the game objects from a file.
             # TODO: Add background image.
-            self._create_dummy_level()
-            for i, k in enumerate(self._characters):
-                self._ev_manager.post(events.AssignCharacterId(i, k))
+            # for i, k in enumerate(self._characters):
+            #     self._ev_manager.post(events.AssignCharacterId(i, k))
+        elif isinstance(event, events.ModelMetaBroadcast):
+            self._meta = event.data
+            if self._meta["level_name"] == "Level 1":
+                self._create_dummy_level()
         elif isinstance(event, events.TickEvent):
             elapsed_time = event.elapsed_time
             self.world.Step(elapsed_time, 10, 10)
             # TODO: Maybe replace the number of iterations (here: 10) by a more meaningful value.
         elif isinstance(event, events.CharacterMoveLeftRequest):
             character_id = event.character_id
-            body = self._characters[character_id]
-            body.ApplyLinearImpulse((-0.2, 0), body.worldCenter, True)
-            MAX_VELO = 2.7
-            if abs(body.linearVelocity[0]) > MAX_VELO:
-                body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
-            # TODO: Improve the movement.
+            # body = self._characters[character_id]
+            # body.ApplyLinearImpulse((-0.2, 0), body.worldCenter, True)
+            # MAX_VELO = 2.7
+            # if abs(body.linearVelocity[0]) > MAX_VELO:
+            #     body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
+            # # TODO: Improve the movement.
         elif isinstance(event, events.CharacterMoveRightRequest):
             character_id = event.character_id
-            body = self._characters[character_id]
-            body.ApplyLinearImpulse((0.2, 0), body.worldCenter, True)
-            MAX_VELO = 2.7
-            if abs(body.linearVelocity[0]) > MAX_VELO:
-                body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
-            # TODO: Improve the movement
+            # body = self._characters[character_id]
+            # body.ApplyLinearImpulse((0.2, 0), body.worldCenter, True)
+            # MAX_VELO = 2.7
+            # if abs(body.linearVelocity[0]) > MAX_VELO:
+            #     body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
+            # # TODO: Improve the movement
         elif isinstance(event, events.CharacterJumpRequest):
             character_id = event.character_id
-            body = self._characters[character_id]
-            body.ApplyLinearImpulse((0, 5), body.worldCenter, True)
-            # TODO: Let the character jump, but only when he touches the ground.
+            # body = self._characters[character_id]
+            # body.ApplyLinearImpulse((0, 5), body.worldCenter, True)
+            # # TODO: Let the character jump, but only when he touches the ground.
+        elif isinstance(event, events.ModelBroadcastRequest):
+            # data = {}
+            # self._ev_manager.post(events.ModelBroadcast(data))
+            # TODO: Create an event that can be sent to update the model.
+            pass
+        elif isinstance(event, events.ModelBroadcast) and not self._ignore_model_broadcasts:
+            # TODO: Update the model.
+            pass
+
+
+class StageStateController(object):
+    """
+    This controller sends meta information about the current stage.
+    """
+
+    def __init__(self, ev_manager):
+        assert isinstance(ev_manager, events.EventManager)
+        self._ev_manager = ev_manager
+        self._id = self._ev_manager.register_listener(self)
+        self._current_level = None
+
+    def notify(self, event):
+        if isinstance(event, events.InitEvent):
+            # TODO: Somehow get the current level.
+            self._current_level = "Level 1"
+        elif isinstance(event, events.ModelMetaBroadcastRequest):
+            if self._current_level is None:
+                raise Exception("A ModelMetaBroadcastRequest came before the InitEvent.")
+            data = {"level_name": self._current_level}
+            self._ev_manager.post(events.ModelMetaBroadcast(data))
+
+
+class StageStateClientController(object):
+    """
+    This controller takes meta information requests and sends them over the network.
+    """
+
+    def __init__(self, ev_manager):
+        assert isinstance(ev_manager, events.NetworkEventManager)
+        self._ev_manager = ev_manager
+        self._id = self._ev_manager.register_listener(self)
+
+    def notify(self, event):
+        if isinstance(event, events.ModelMetaBroadcastRequest):
+            self._ev_manager.post(event)

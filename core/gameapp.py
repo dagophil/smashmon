@@ -70,10 +70,11 @@ class GameApp(object):
         logging.debug("GameApp: Loading stage model")
 
         if self._args.server:
-            stage_model = stage.StageModel(self._ev_manager)
+            stage_model = stage.StageModel(self._ev_manager, ignore_model_broadcasts=True)
             stage_pygame_view = stage_view.StagePygameView(self._ev_manager, stage_model)
-            stage_controller = stage_io.StageIOController(self._ev_manager, character_index=0)
+            stage_controller = stage_io.StageIOController(self._ev_manager)
             network_server_controller = network_controller.ServerController(self._ev_manager, max_num_clients=1)
+            load_controller = stage.StageStateController(self._ev_manager)
         elif self._args.client:
             # Network-Client.
             stage_model = stage.StageModel(self._ev_manager)
@@ -82,14 +83,14 @@ class GameApp(object):
             # TODO: Somehow get the host.
             from socket import gethostname
             network_ev_manager = events.NetworkEventManager(self._ev_manager, gethostname())
-            stage_controller = stage_io.StageIOController(network_ev_manager, character_index=1)
+            stage_controller = stage_io.StageIOController(network_ev_manager)
+            load_controller = stage.StageStateClientController(network_ev_manager)
         else:
             # Single-player.
             stage_model = stage.StageModel(self._ev_manager)
             stage_pygame_view = stage_view.StagePygameView(self._ev_manager, stage_model)
-            stage_controller = stage_io.StageIOController(self._ev_manager, character_index=0)
-
-        # TODO: Somehow get the character index from the menu.
+            stage_controller = stage_io.StageIOController(self._ev_manager)
+            load_controller = stage.StageStateController(self._ev_manager)
 
         # Init all components and start the ticker.
         self._ev_manager.post(events.InitEvent())

@@ -120,11 +120,12 @@ class NetworkServer(object):
         else:
             self._encode = encode
         self._clients = []
+        self._stop_clients = []
         self._client_queue = Queue.Queue()
         self._client_listeners = []
         self._item_queue = Queue.Queue()
-        self._stop = threading.Event()
         self._client_acceptor = None
+        self._stop_acceptor = None
 
     def num_clients(self):
         return len(self._clients)
@@ -138,8 +139,11 @@ class NetworkServer(object):
         """
         if self._client_acceptor is not None:
             raise Exception("The client acceptor is already running.")
+        self._stop_acceptor = threading.Event()
         self._client_acceptor = threading.Thread(target=accept_clients,
-                                                 args=(self._port, self._client_queue, self._stop, max_num_connections))
+                                                 args=(self._port, self._client_queue,
+                                                       self._stop_acceptor, max_num_connections))
+        self._client_acceptor.daemon = True
         self._client_acceptor.start()
 
     def update_client_list(self):
@@ -150,7 +154,10 @@ class NetworkServer(object):
             new_clients.append(self._client_queue.get())
             self._client_queue.task_done()
         for c, addr in new_clients:
-            t = threading.Thread(target=listen_on_connection, args=(c, self._item_queue, self._stop))
+            stop = threading.Event()
+            self._stop_clients.append(stop)
+            t = threading.Thread(target=listen_on_connection, args=(c, self._item_queue, stop))
+            t.daemon = True
             t.start()
             self._clients.append((c, addr, t))
         if self._client_acceptor is not None:
@@ -172,9 +179,11 @@ class NetworkServer(object):
     def close_all(self):
         """Close all connections and exit all threads.
         """
-        self._stop.set()
+        self._stop_acceptor.set()
         if self._client_acceptor is not None:
             self._client_acceptor.join()
+        for stop in self._stop_clients:
+            stop.set()
         for c, addr, t in self._clients:
             t.join()
 
@@ -183,8 +192,18 @@ class NetworkServer(object):
         """
         data = self._encode(obj)
         data_string = str(len(data)) + "#" + data
-        for c, addr, t in self._clients:
-            c.sendall(data_string)
+        to_remove = []
+        for i, (c, addr, t) in enumerate(self._clients):
+            try:
+                c.sendall(data_string)
+            except socket.error:
+                # The client has closed the connection.
+                to_remove.append(i)
+
+        for i in reversed(to_remove):
+            self._stop_clients[i].set()
+            del self._clients[i]
+            del self._stop_clients[i]
 
 
 class NetworkClient(object):
@@ -215,6 +234,7 @@ class NetworkClient(object):
         self._socket.connect((host, port))
         logging.debug("Network: Established connection to %s:%d" % (host, port))
         self._network_listener = threading.Thread(target=listen_on_connection, args=(self._socket, self._queue, self._stop))
+        self._network_listener.daemon = True
         self._network_listener.start()
 
     def send(self, obj):

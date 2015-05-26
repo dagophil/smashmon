@@ -167,6 +167,45 @@ class CharacterJumpRequest(Event):
         self.character_id = character_id
 
 
+class ModelBroadcastRequest(Event):
+    """
+    This event is sent, when a controller wants the model to broadcast its current state.
+    The ServerController sends this event, when he wants to send the current model state to all clients.
+    """
+
+    def __init__(self):
+        super(ModelBroadcastRequest, self).__init__(name="Model broadcast request")
+
+
+class ModelBroadcast(Event):
+    """This event contains information to update a model.
+    """
+
+    def __init__(self, data):
+        super(ModelBroadcast, self).__init__(name="Model broadcast")
+        self.data = data
+
+
+class ModelMetaBroadcastRequest(Event):
+    """
+    This event is sent, when a component needs meta information (such as level name, number of characters, ...)
+    about the current model.
+    """
+
+    def __init__(self):
+        super(ModelMetaBroadcastRequest, self).__init__(name="Model meta broadcast request")
+
+
+class ModelMetaBroadcast(Event):
+    """
+    This event contains meta information (such as level name, number of characters, ...) about the current model.
+    """
+
+    def __init__(self, data):
+        super(ModelMetaBroadcast, self).__init__(name="Model meta broadcast")
+        self.data = data
+
+
 class EventManager(object):
     """
     Receives events and posts them to all _listeners.
@@ -225,6 +264,8 @@ class NetworkEventManager(EventManager):
         # TODO: Complete the list of ignore-events. What about WorldStep and CloseCurrentModel?
 
     def post(self, event):
+        if isinstance(event, CloseCurrentModel):
+            self._ev_manager.post(event)
         for cls in self._ignore_events:
             if isinstance(event, cls):
                 break
@@ -252,9 +293,10 @@ class NetworkEventManager(EventManager):
 # Create a dictionary {class_identifier: class} and a dictionary {class: class_identifier}.
 # Currently, __class__.__name__ is used as identifier, but this may change later.
 _event_classes = [TickEvent, InitEvent, MenuCreatedEvent, ButtonHoverRequestedEvent, ButtonUnhoverRequestedEvent,
-                 ButtonHoverEvent, ButtonUnhoverEvent, ButtonPressRequestedEvent, ButtonPressEvent,
-                 ButtonActionRequestedEvent, ButtonActionEvent, CloseCurrentModel, WorldStep, AssignCharacterId,
-                 CharacterMoveLeftRequest, CharacterMoveRightRequest, CharacterJumpRequest]
+                  ButtonHoverEvent, ButtonUnhoverEvent, ButtonPressRequestedEvent, ButtonPressEvent,
+                  ButtonActionRequestedEvent, ButtonActionEvent, CloseCurrentModel, WorldStep, AssignCharacterId,
+                  CharacterMoveLeftRequest, CharacterMoveRightRequest, CharacterJumpRequest, ModelBroadcastRequest,
+                  ModelBroadcast, ModelMetaBroadcast, ModelMetaBroadcastRequest]
 _str_to_cls = {}
 _cls_to_str = {}
 for _cls in _event_classes:
