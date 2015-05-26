@@ -131,16 +131,6 @@ class WorldStep(Event):
         self.world = world
 
 
-class AssignCharacterId(Event):
-    """This event is sent, when a character got an id.
-    """
-
-    def __init__(self, character_index, character_id):
-        super(AssignCharacterId, self).__init__(name="Assign character id")
-        self.character_index = character_index
-        self.character_id = character_id
-
-
 class CharacterMoveLeftRequest(Event):
     """This event is sent, when a controller wats to move a character to the left.
     """
@@ -222,6 +212,26 @@ class ClientRemoved(Event):
     def __init__(self, client_name):
         super(ClientRemoved, self).__init__(name="Client removed")
         self.client_name = client_name
+
+
+class AssignCharacterToClient(Event):
+    """This event is sent when a client gets a new character id.
+    """
+
+    def __init__(self, client_name, character_id):
+        super(AssignCharacterToClient, self).__init__(name="Assign character to client")
+        self.client_name = client_name
+        self.character_id = character_id
+
+
+class AssignCharacter(Event):
+    """
+    This event is sent when a new character is assigned to the local client.
+    """
+
+    def __init__(self, character_id):
+        super(AssignCharacter, self).__init__(name="Assign character")
+        self.character_id = character_id
 
 
 class EventManager(object):
@@ -312,9 +322,10 @@ class NetworkEventManager(EventManager):
 # Currently, __class__.__name__ is used as identifier, but this may change later.
 _event_classes = [TickEvent, InitEvent, MenuCreatedEvent, ButtonHoverRequestedEvent, ButtonUnhoverRequestedEvent,
                   ButtonHoverEvent, ButtonUnhoverEvent, ButtonPressRequestedEvent, ButtonPressEvent,
-                  ButtonActionRequestedEvent, ButtonActionEvent, CloseCurrentModel, WorldStep, AssignCharacterId,
+                  ButtonActionRequestedEvent, ButtonActionEvent, CloseCurrentModel, WorldStep, AssignCharacter,
                   CharacterMoveLeftRequest, CharacterMoveRightRequest, CharacterJumpRequest, ModelBroadcastRequest,
-                  ModelBroadcast, ModelMetaBroadcast, ModelMetaBroadcastRequest, ClientAccepted, ClientRemoved]
+                  ModelBroadcast, ModelMetaBroadcast, ModelMetaBroadcastRequest, ClientAccepted, ClientRemoved,
+                  AssignCharacterToClient]
 _str_to_cls = {}
 _cls_to_str = {}
 for _cls in _event_classes:

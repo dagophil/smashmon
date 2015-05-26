@@ -18,11 +18,10 @@ class StageIOController(object):
     def notify(self, event):
         if isinstance(event, events.InitEvent):
             pass
-            # self._ev_manager.post(events.NeedCharacterId(controller_id=self._id))
-        elif isinstance(event, events.AssignCharacterId):
-            if event.character_index == self._character_index:
-                self._character_id = event.character_id
-                logging.debug("Controller %d (%s) got character with id %d" % (self._id, self.__class__.__name__, self._character_id))
+        elif isinstance(event, events.AssignCharacter):
+            self._character_id = event.character_id
+            logging.debug("Controller %d (%s) got character with id %d" %
+                          (self._id, self.__class__.__name__, self._character_id))
         elif isinstance(event, events.TickEvent):
             # Handle key down events.
             for pygame_event in pygame.event.get():
@@ -32,11 +31,13 @@ class StageIOController(object):
                     if pygame_event.key == pygame.K_ESCAPE:
                         self._ev_manager.post(events.CloseCurrentModel(next_model_name=None))
                     elif pygame_event.key == pygame.K_SPACE:
-                        self._ev_manager.post(events.CharacterJumpRequest(self._character_id))
+                        if self._character_id is not None:
+                            self._ev_manager.post(events.CharacterJumpRequest(self._character_id))
 
             # Handle key pressed events.
-            pressed = pygame.key.get_pressed()
-            if pressed[pygame.K_a]:
-                self._ev_manager.post(events.CharacterMoveLeftRequest(self._character_id))
-            if pressed[pygame.K_d]:
-                self._ev_manager.post(events.CharacterMoveRightRequest(self._character_id))
+            if self._character_id is not None:
+                pressed = pygame.key.get_pressed()
+                if pressed[pygame.K_a]:
+                    self._ev_manager.post(events.CharacterMoveLeftRequest(self._character_id))
+                if pressed[pygame.K_d]:
+                    self._ev_manager.post(events.CharacterMoveRightRequest(self._character_id))

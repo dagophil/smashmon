@@ -72,7 +72,7 @@ class GameApp(object):
         if self._args.server:
             stage_model = stage.StageModel(self._ev_manager, ignore_model_broadcasts=True)
             stage_pygame_view = stage_view.StagePygameView(self._ev_manager, stage_model)
-            stage_controller = stage_io.StageIOController(self._ev_manager)
+            stage_controller = stage_io.StageIOController(self._ev_manager, character_index=0)
             network_server_controller = network_controller.ServerController(self._ev_manager, max_num_clients=1)
             load_controller = stage.StageStateController(self._ev_manager)
         elif self._args.client:

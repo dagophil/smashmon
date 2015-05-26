@@ -16,10 +16,10 @@ class ServerController(object):
         self._server = network.NetworkServer(port=port, decode=events.to_event, encode=events.to_string)
         self._max_num_clients = max_num_clients
         self._num_clients = 0
-        self._post_ignore_events = [events.TickEvent, events.InitEvent, events.CloseCurrentModel]
+        self._post_ignore_events = [events.TickEvent, events.InitEvent, events.CloseCurrentModel, events.WorldStep]
         self._send_ignore_events = [events.TickEvent, events.InitEvent, events.ModelMetaBroadcastRequest,
-                                    events.ModelBroadcastRequest]
-        # TODO: Complete the list of ignore-events. What about events.WorldStep and events.CloseCurrentModel?
+                                    events.ModelBroadcastRequest, events.AssignCharacter, events.WorldStep]
+        # TODO: Complete the list of ignore-events.
 
         self._last_model_broadcast = 0  # elapsed time since the model was sent to all clients
         self._model_broadcast_interval = 1.0  # the network clients are updated in this interval
@@ -39,8 +39,6 @@ class ServerController(object):
             for client in removed_client_names:
                 self._ev_manager.post(events.ClientRemoved(client))
 
-
-
             # Get the network events from the clients and post them to the event manager.
             network_events = self._server.get_objects()
             for ev in network_events:
@@ -55,6 +53,9 @@ class ServerController(object):
             if self._last_model_broadcast >= self._model_broadcast_interval:
                 self._last_model_broadcast = 0
                 self._ev_manager.post(events.ModelBroadcastRequest())
+        elif isinstance(event, events.AssignCharacterToClient):
+            ev = events.AssignCharacter(event.character_id)
+            self._server.send_to(event.client_name, ev)
 
         for cl in self._send_ignore_events:
             if isinstance(event, cl):

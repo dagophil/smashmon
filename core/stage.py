@@ -97,24 +97,24 @@ class StageModel(object):
             # TODO: Maybe replace the number of iterations (here: 10) by a more meaningful value.
         elif isinstance(event, events.CharacterMoveLeftRequest):
             character_id = event.character_id
-            # body = self._character_bodies[character_id]
-            # body.ApplyLinearImpulse((-0.2, 0), body.worldCenter, True)
-            # MAX_VELO = 2.7
-            # if abs(body.linearVelocity[0]) > MAX_VELO:
-            #     body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
-            # # TODO: Improve the movement.
+            body = self._character_bodies[character_id]
+            body.ApplyLinearImpulse((-0.2, 0), body.worldCenter, True)
+            MAX_VELO = 2.7
+            if abs(body.linearVelocity[0]) > MAX_VELO:
+                body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
+            # TODO: Improve the movement.
         elif isinstance(event, events.CharacterMoveRightRequest):
             character_id = event.character_id
-            # body = self._character_bodies[character_id]
-            # body.ApplyLinearImpulse((0.2, 0), body.worldCenter, True)
-            # MAX_VELO = 2.7
-            # if abs(body.linearVelocity[0]) > MAX_VELO:
-            #     body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
-            # # TODO: Improve the movement
+            body = self._character_bodies[character_id]
+            body.ApplyLinearImpulse((0.2, 0), body.worldCenter, True)
+            MAX_VELO = 2.7
+            if abs(body.linearVelocity[0]) > MAX_VELO:
+                body.linearVelocity[0] = math.copysign(MAX_VELO, body.linearVelocity[0])
+            # TODO: Improve the movement
         elif isinstance(event, events.CharacterJumpRequest):
             character_id = event.character_id
-            # body = self._character_bodies[character_id]
-            # body.ApplyLinearImpulse((0, 5), body.worldCenter, True)
+            body = self._character_bodies[character_id]
+            body.ApplyLinearImpulse((0, 5), body.worldCenter, True)
             # # TODO: Let the character jump, but only when he touches the ground.
         elif isinstance(event, events.ModelBroadcastRequest):
             data = {}
@@ -136,19 +136,25 @@ class StageStateController(object):
         self._ev_manager = ev_manager
         self._id = self._ev_manager.register_listener(self)
         self._current_level = None
-        self._character_names = None
+        self._character_names = []
+        self._character_controllers = [0]  # the server always controls the first character
 
     def notify(self, event):
         if isinstance(event, events.InitEvent):
             # TODO: Somehow get the current level.
             self._current_level = "Level 1"
             self._character_names = ["char0", "char1"]
+            self._ev_manager.post(events.AssignCharacter(0))
         elif isinstance(event, events.ModelMetaBroadcastRequest):
             if self._current_level is None:
                 raise Exception("A ModelMetaBroadcastRequest came before the InitEvent.")
             data = {"level_name": self._current_level,
                     "character_names": self._character_names}
             self._ev_manager.post(events.ModelMetaBroadcast(data))
+        elif isinstance(event, events.ClientAccepted):
+            for i in xrange(len(self._character_controllers), len(self._character_names)):
+                self._character_controllers.append(event.client_name)
+                self._ev_manager.post(events.AssignCharacterToClient(event.client_name, i))
 
 
 class StageStateClientController(object):

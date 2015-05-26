@@ -219,6 +219,19 @@ class NetworkServer(object):
                 # The client has closed the connection.
                 self._to_be_removed.append(i)
 
+    def send_to(self, addr, obj):
+        """Send the object to the client with the given address.
+        """
+        data = self._encode(obj)
+        data_string = str(len(data)) + "#" + data
+        for i, (c, a, t) in enumerate(self._clients):
+            if addr == a:
+                try:
+                    c.sendall(data_string)
+                except socket.error:
+                    # The client has closed the connection.
+                    self._to_be_removed.append(i)
+
 
 class NetworkClient(object):
     """
